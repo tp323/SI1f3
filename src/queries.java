@@ -42,9 +42,7 @@ public class queries {
     public static void reserva(Date datares, String modopag, int idviagem) throws SQLException{
         try {
             connect();
-            pstmt = con.prepareStatement("INSERT INTO RESERVA " +
-                    "(ident, datareserva, modopagamento, viagem)" +
-                    " VALUES (?,?,?,?)");
+            pstmt = con.prepareStatement("INSERT INTO RESERVA (ident, datareserva, modopagamento, viagem) VALUES (?,?,?,?)");
             pstmt.setInt(1, getLastInt("ident","RESERVA")+1);    //ident reserva
             pstmt.setDate(2, datares);    //data da reserva
             pstmt.setString(3, modopag);    //modopagamento
@@ -59,9 +57,8 @@ public class queries {
     public static void alterViagem(Date data, Time timepart, Time timecheg, int dist, String estpart, String estcheg) throws SQLException{
         try {
             connect();
-            pstmt = con.prepareStatement("UPDATE VIAGEM" +
-                    "SET ident = ?, dataviagem = ?, horapartida = ?, horachegada  = ?, " +
-                    "distancia = ?, estpartida = ?, estchegada = ?");
+            pstmt = con.prepareStatement("UPDATE VIAGEM SET ident = ?, dataviagem = ?, horapartida = ?," +
+                    " horachegada  = ?, distancia = ?, estpartida = ?, estchegada = ?");
             pstmt.setInt(1,getLastInt("ident","VIAGEM")+1);
             pstmt.setDate(2, data);
             pstmt.setTime(3, timepart);
