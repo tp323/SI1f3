@@ -9,10 +9,12 @@ public class queries {
     private static ResultSet rs = null;
     
 
-    public static void main(String[] args) throws SQLException {
-        //test();
+    public static void main(String[] args) throws SQLException {    //USED FOR TESTS DELETE ON END
         //System.out.println(getLastInt("ident","RESERVA"));
     }
+
+    //TODO: verificar restrições na base de dados já feita no inicio da execução do programa
+
 
     public static void connect() throws SQLException {
         try {
@@ -22,29 +24,12 @@ public class queries {
         }
     }
 
-    public static void test() throws SQLException {
-        int test = -1;
-
-        try {
-            connect();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT max(nid) FROM PASSAGEIRO");
-            rs.next();
-            test = rs.getInt(1);
-            rs.close();
-            stmt.close();
-            System.out.println(test);
-        }catch(SQLException sqlex) {
-            System.out.println("Erro: " + sqlex.getMessage());
-        }
-    }
-
-    public static void reserva(Date datares, String modopag, int idviagem) throws SQLException{
+    public static void reserva(String datares, String modopag, int idviagem) throws SQLException{
         try {
             connect();
             pstmt = con.prepareStatement("INSERT INTO RESERVA (ident, datareserva, modopagamento, viagem) VALUES (?,?,?,?)");
             pstmt.setInt(1, getLastInt("ident","RESERVA")+1);    //ident reserva
-            pstmt.setDate(2, datares);    //data da reserva
+            pstmt.setString(2, datares);    //data da reserva
             pstmt.setString(3, modopag);    //modopagamento
             pstmt.setInt(4, idviagem);    //ident viagem
             pstmt.executeUpdate();
