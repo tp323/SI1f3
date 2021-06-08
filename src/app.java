@@ -13,9 +13,11 @@ class App {
     private static final int CURRENT_MONTH = cal.get(Calendar.MONTH)+1; //STARTS COUNTING ON 0 = JAN
     private static final int CURRENT_DAY = cal.get(Calendar.DAY_OF_MONTH);
 
+    private static final String[] MODOS_PAGAMANETOS = {"MB" ,"Pay Pal", "CC"};
+
+
     public static void main(String[] args) throws SQLException {
         optionsMenu();
-
 
     }
 
@@ -89,17 +91,17 @@ class App {
     private static void newReserve() throws SQLException {
         System.out.println("Nova Reserva");
         System.out.println("Data da reserva");
-        String date = getDate();
+        //String date = getDate();
 
         System.out.println("Modo de Pagamento");
-        System.out.println("Modos de Pagamento permitidos:");
-
+        System.out.println("Modos de Pagamento permitidos: MB, Pay Pal, CC");
+        String modospag = checkIfInArray(MODOS_PAGAMANETOS);
 
 
 
         // TODO: substituir id viagem por cidade/ estaçao de destino
         // TODO: se não existir tem de se acrescentar viagem
-        //TODO: ?? imprimir destinos possiveis, mesmo assim se n existir o destino temos de o acrescentar
+        // TODO: ?? imprimir destinos possiveis, mesmo assim se n existir o destino temos de o acrescentar
 
         //queries.reserva(date ,modopagamento ,idviagem);
     }
@@ -182,11 +184,13 @@ class App {
 
     public static boolean checkIfBelowMax(int var, int max) {return var >= max;}
 
-    public static void checkIfInArray(String[] array){
+    public static String checkIfInArray(String[] array){
         String var;
+        input.nextLine();
         do{
             var = getValString();
-        }while (checkIfInArray(var, array));
+        }while (!checkIfInArray(var, array));
+        return var;
     }
 
     public static boolean checkIfInArray(String var, String[] array){

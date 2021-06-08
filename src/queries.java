@@ -13,7 +13,7 @@ public class queries {
         //System.out.println(getLastInt("ident","RESERVA"));
     }
 
-    //TODO: verificar restrições na base de dados já feita no inicio da execução do programa
+    // TODO: verificar restrições na base de dados já feita no inicio da execução do programa
 
 
     public static void connect() throws SQLException {
