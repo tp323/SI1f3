@@ -13,7 +13,7 @@ class App {
     private static final int CURRENT_MONTH = cal.get(Calendar.MONTH)+1; //STARTS COUNTING ON 0 = JAN
     private static final int CURRENT_DAY = cal.get(Calendar.DAY_OF_MONTH);
 
-    private static final String[] MODOS_PAGAMANETOS = {"MB" ,"Pay Pal", "CC"};
+    private static final String[] MODOS_PAGAMENTOS = {"MB" ,"Pay Pal", "CC"};
 
 
     public static void main(String[] args) throws SQLException {
@@ -28,7 +28,7 @@ class App {
                 newReserve();
                 break;
             case 2:
-
+                alterViagem();
                 break;
             case 3:
 
@@ -69,7 +69,7 @@ class App {
         System.out.println("1. Nova Reserva (a)");
         System.out.println("2. Alterar Viagem (b)");
         System.out.println("3. Colocar Autocarro Fora de Serviço (c)");
-        System.out.println("4. Lista Autocarros e se se Encontram ou Não em Serviço");
+        System.out.println("4. Lista Autocarros em Serviço e Fora de Serviço");
         System.out.println("5. Número Total de Quilómetros de um Autocarro (d)");
         System.out.println("6. Número de Lugares Vazios dos Autocarros ou Comboios que Partiram de Determinada Cidade (2d)");
         System.out.println("7. Soma dos Preços de Bilhete para a Categoria de Adultos (2f)");
@@ -82,28 +82,79 @@ class App {
 
     private static void exit() throws SQLException {
         System.out.println("Confirma Saída do Programa");
-        System.out.println("prima S para confirmar ou qualquer outra tecla para retornar ao menu");
-        char confirmExit = input.next().charAt(0);
-        if(confirmExit =='s' || confirmExit =='S') System.exit(0);
+        if(checkConsent(true)) System.exit(0);
         else optionsMenu();
+    }
+
+    private static boolean checkConsent(boolean print) {
+        if(print) System.out.println("prima S para confirmar ou qualquer outra tecla para cancelar");
+        char confirmExit = input.next().charAt(0);
+        return (confirmExit =='s' || confirmExit =='S');
     }
 
     private static void newReserve() throws SQLException {
         System.out.println("Nova Reserva");
         System.out.println("Data da reserva");
-        //String date = getDate();
+        //String date = getDateAndTime();
 
         System.out.println("Modo de Pagamento");
         System.out.println("Modos de Pagamento permitidos: MB, Pay Pal, CC");
-        String modospag = checkIfInArray(MODOS_PAGAMANETOS);
+        String modospag = checkIfInArray(MODOS_PAGAMENTOS);
 
-
+        System.out.println("Cidade de Partida:");
+        String cidadePartida = getValString();
+        if(queries.checkIfIfCityOnPartida(cidadePartida)){  //CIDADE PARTIDA EXISTE
+            System.out.println("Cidade existe na DataBase");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
+            System.out.println("Com as seguintes Estações:");
+            queries.printEstacoesFromLocalidade(cidadePartida);
+        }else{  //CIDADE PARTIDA NÃO EXISTE
+            System.out.println("Cidade não existe na DataBase");
+            queries.addCityToDB(cidadePartida); //COMO A CIDADE NÃO EXISTIA NA DB TB NÃO EXISTEM ESTAÇÕES PARA A MESMA
+            
+            // TODO: add estação
+            // TODO: repetir para chegada passar para método para tal
+        }
 
         // TODO: substituir id viagem por cidade/ estaçao de destino
         // TODO: se não existir tem de se acrescentar viagem
         // TODO: ?? imprimir destinos possiveis, mesmo assim se n existir o destino temos de o acrescentar
 
         //queries.reserva(date ,modopagamento ,idviagem);
+    }
+
+    private static void alterViagem() throws SQLException{
+        System.out.println("Alterar Viagem");
+        System.out.println("Deseja Ver Viagens Disponiveis?");
+        if(checkConsent(true)){
+            System.out.println("Viagens Disponiveis:");
+            queries.availableViagem();
+        }
+
+        System.out.println("Viagem a Alterar");     //CONSIDERAMOS QUE A VIAGEM EXISTE E SÓ PODE SER SELECIONADA UMA DAS VIAGENS EXISTENTES
+        System.out.println("Escolha de entre as viagens disponiveis, através do digito que a precede");
+        // TODO: GET MAX VALUE
+        //checkBetweenBoundaries(1,max);
+
+    }
+
+    private static String getDateAndTime(){
+        System.out.println("Ano");
+        int year = checkIfAboveMin(CURRENT_YEAR);
+        System.out.println("Mês");
+        System.out.println("Entre 1 e 12");
+        System.out.println("1 = JAN  12 = DEZ");
+        int month;
+        if(year == CURRENT_YEAR ) month = checkBetweenBoundaries(CURRENT_MONTH, 12);
+        else month = checkBetweenBoundaries(1, 12);
+        System.out.println("Dia");
+        int lastdaymonth = lastDayMonth(month, year);
+        System.out.println("Entre 1 e " + lastdaymonth);
+        int day = checkBetweenBoundaries(1, lastdaymonth);
+        System.out.println("Hora");
+        int hour = checkBetweenBoundaries(0,23);
+        System.out.println("Minutos");
+        int minutes = checkBetweenBoundaries(0,59); // não se justifica colocar segundos
+        return getStringDate(year,month,day,hour,minutes);
     }
 
     private static String getDate(){
@@ -116,15 +167,18 @@ class App {
         if(year == CURRENT_YEAR ) month = checkBetweenBoundaries(CURRENT_MONTH, 12);
         else month = checkBetweenBoundaries(1, 12);
         System.out.println("Dia");
-        System.out.println("Dia do Mês");
         int lastdaymonth = lastDayMonth(month, year);
         System.out.println("Entre 1 e " + lastdaymonth);
         int day = checkBetweenBoundaries(1, lastdaymonth);
+        return getStringDate(year,month,day);
+    }
+
+    private static String getTime(){
         System.out.println("Hora");
         int hour = checkBetweenBoundaries(0,23);
         System.out.println("Minutos");
-        int minutes = checkBetweenBoundaries(0,60); // não se justifica colocar segundos
-        return getStringDate(year,month,day,hour,minutes);
+        int minutes = checkBetweenBoundaries(0,59); // não se justifica colocar segundos
+        return getStringTime(hour,minutes);
     }
 
     public static int lastDayMonth(int month, int year){
@@ -146,6 +200,25 @@ class App {
         else date += "0" + month + "-";
         if(checkIfBelowMax(day,10)) date += day + " ";
         else date += "0" + day + " ";
+        if(checkIfBelowMax(hour,10)) date += hour + ":";
+        else date += "0" + hour + ":";
+        if(checkIfBelowMax(minutes,10)) date += minutes;
+        else date += "0" + minutes;
+        date += ":00";
+        return date;
+    }
+
+    public static String getStringDate(int year, int month, int day){
+        String date = year + "-";
+        if(checkIfBelowMax(month,10)) date += month + "-";
+        else date += "0" + month + "-";
+        if(checkIfBelowMax(day,10)) date += day;
+        else date += "0" + day;
+        return date;
+    }
+
+    public static String getStringTime(int hour, int minutes){
+        String date = "";
         if(checkIfBelowMax(hour,10)) date += hour + ":";
         else date += "0" + hour + ":";
         if(checkIfBelowMax(minutes,10)) date += minutes;
@@ -198,6 +271,11 @@ class App {
         return false;
     }
 
+    private static boolean stringCheckCityChegadaInDB() throws SQLException{
+        String var = getValString();
+        return queries.checkIfIfCityOnChegada(var);
+    }
+
     private static int getValInt(){
         System.out.print("> ");
         return input.nextInt();
@@ -207,5 +285,6 @@ class App {
         System.out.print("> ");
         return input.nextLine();
     }
+
 
 }
