@@ -13,7 +13,8 @@ public class queries {
         //System.out.println(checkIfInDBwithStmt("ident","VIAGEM","123"));
         //System.out.println(checkIfInDBwithPstmt("ident","VIAGEM","123"));
         //System.out.println(checkIfIfCityOnPartida("Lisboa"));
-        addCityToDB("ll");
+        //addCityToDB("ll");
+        System.out.println(getInt("codpostal", "nome", "LOCALIDADE","Lisboa"));
     }
 
     // TODO: verificar restrições na base de dados já feita no inicio da execução do programa
@@ -134,11 +135,11 @@ public class queries {
         return bol;
     }
 
-    public static void addCityToDB(String cidade) throws SQLException{
+    public static void addCityToDB(String cidade, int codpostal) throws SQLException{
         try{
             connect();
             pstmt = con.prepareStatement("INSERT INTO LOCALIDADE (codpostal, nome) VALUES ( ?, ?)");
-            pstmt.setString(1, ""+(getLastInt("codpostal", "LOCALIDADE")+1));
+            pstmt.setInt(1, codpostal);
             pstmt.setString(2, cidade);
 
             pstmt.executeUpdate();
@@ -148,6 +149,38 @@ public class queries {
         }
     }
 
+    public static void addStationToDB(String nome, String tipo, int nplataforma, int localidade) throws SQLException{
+        try{
+            connect();
+            pstmt = con.prepareStatement("INSERT INTO ESTACAO (nome, tipo, nplataforma, localidade) VALUES ( ?, ?, ?, ?)");
+            pstmt.setString(1, nome);
+            pstmt.setString(2, tipo);
+            pstmt.setInt(3, nplataforma);
+            pstmt.setInt(4, localidade);
+
+            pstmt.executeUpdate();
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+    }
+
+    public static int printEstacoesFromLocalidade(String cidade){
+        int numStations = -1;
+        try{
+            connect();
+            pstmt = con.prepareStatement("SELECT ESTACAO.nome FROM ESTACAO JOIN  LOCALIDADE ON " +
+                    "ESTACAO.localidade = LOCALIDADE.codpostal WHERE LOCALIDADE.nome = ?");
+            pstmt.setString(1, cidade);
+            rs = pstmt.executeQuery();
+
+            numStations = (printTable(rs,1));
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+        return numStations;
+    }
 
     public static boolean checkIfInDBwithStmt(String attribute, String table, String element) throws SQLException{
         boolean bol = false;
@@ -162,18 +195,18 @@ public class queries {
         }return bol;
     }
 
-    public static void printEstacoesFromLocalidade(String cidade){
+    public static int getInt(String getattribute, String whereattribute, String table, String element) throws SQLException{
+        int val = -1;
         try{
             connect();
-            pstmt = con.prepareStatement("SELECT ESTACAO.nome FROM ESTACAO JOIN  LOCALIDADE ON " +
-                    "ESTACAO.localidade = LOCALIDADE.codpostal WHERE LOCALIDADE.nome = ?");
-            pstmt.setString(1, cidade);
-            rs = pstmt.executeQuery();
-            printTable(rs,1);
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT " + getattribute + " FROM " + table + " WHERE " + whereattribute + " = '" + element + "'");
+            rs.next();
+            val = rs.getInt("codpostal");
             closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
-        }
+        }return val;
     }
 
     public static boolean checkIfInDBwithPstmt(String attribute, String table, String element) throws SQLException{
@@ -227,7 +260,7 @@ public class queries {
         return maxInt;
     }
 
-    public static void printTable(ResultSet rs, int columnsNumber) throws SQLException {
+    public static int printTable(ResultSet rs, int columnsNumber) throws SQLException {
         int numRows = 1;
         while (rs.next()) {
             for(int i = 1 ; i <= columnsNumber; i++){
@@ -235,7 +268,7 @@ public class queries {
                 System.out.print(rs.getString(i) + " "); //Print one element of a row
             }System.out.println();//Move to the next line to print the next row.
             numRows++;
-        }
+        }return numRows-1;
     }
 
     private static void closeConnection() throws SQLException {

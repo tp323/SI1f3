@@ -25,9 +25,11 @@ class App {
         optionsMenuDisplay();
         switch (input.nextInt()) {
             case 1:
+                input.nextLine();
                 newReserve();
                 break;
             case 2:
+                input.nextLine();
                 alterViagem();
                 break;
             case 3:
@@ -99,27 +101,73 @@ class App {
 
         System.out.println("Modo de Pagamento");
         System.out.println("Modos de Pagamento permitidos: MB, Pay Pal, CC");
-        String modospag = checkIfInArray(MODOS_PAGAMENTOS);
+        //input.nextLine();   // clear line
+
+        //String modospag = checkIfInArray(MODOS_PAGAMENTOS);
+
+        System.out.println("Meio de Transporte:");
+        System.out.println("comboio ou autocarro");     //add capcheck and transform String to lowerCap
+        //String meiotransporte = checkIfInArray(new String[]{"comboio", "autocarro"});
+        String tipo = "";
+        String meiotransporte = "comboio";      //debug remove after
+        if(meiotransporte.equals("comboio")) tipo = "terminal";
+        if(meiotransporte.equals("autocarro")) tipo = "paragem";
 
         System.out.println("Cidade de Partida:");
-        String cidadePartida = getValString();
-        if(queries.checkIfIfCityOnPartida(cidadePartida)){  //CIDADE PARTIDA EXISTE
-            System.out.println("Cidade existe na DataBase");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
-            System.out.println("Com as seguintes Estações:");
-            queries.printEstacoesFromLocalidade(cidadePartida);
-        }else{  //CIDADE PARTIDA NÃO EXISTE
-            System.out.println("Cidade não existe na DataBase");
-            queries.addCityToDB(cidadePartida); //COMO A CIDADE NÃO EXISTIA NA DB TB NÃO EXISTEM ESTAÇÕES PARA A MESMA
-            
-            // TODO: add estação
-            // TODO: repetir para chegada passar para método para tal
-        }
+        cidade(tipo);
+        System.out.println("Cidade de Chegada:");
+        cidade(tipo);
+
+
 
         // TODO: substituir id viagem por cidade/ estaçao de destino
         // TODO: se não existir tem de se acrescentar viagem
         // TODO: ?? imprimir destinos possiveis, mesmo assim se n existir o destino temos de o acrescentar
 
         //queries.reserva(date ,modopagamento ,idviagem);
+    }
+
+    private static void cidade(String tipo) throws SQLException {
+        String cidade = getValString();
+        int codpostal = -1;
+
+        if(queries.checkIfIfCityOnPartida(cidade)){  //CIDADE PARTIDA EXISTE
+            System.out.println("Cidade existe na Base de Dados");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
+            codpostal = queries.getInt("codpostal", "nome", "LOCALIDADE",cidade);
+            System.out.println("Selecione uma das seguintes Estações:");    //para simplificar partimos do principio q casdo haja estações vai ser utilizada uma das mesmas
+            System.out.println("Para tal utilize o número que a precede:");
+            checkBetweenBoundaries(1,queries.printEstacoesFromLocalidade(cidade));
+            // MAYBE ADD CHECK TO STATION TO VERIFY IF IT ALLOWS THE MEANS OF TRANSPORTATION
+        }else{  //CIDADE NÃO EXISTE
+            System.out.println("Cidade não existe na DataBase");
+            System.out.println("Nome Cidade:");
+            String newcidade = getValString();
+            System.out.println("Código Postal:");
+            codpostal = getValInt();        //restrição?    ??generate??
+            //COMO A CIDADE NÃO EXISTIA NA DB TB NÃO EXISTEM ESTAÇÕES PARA A MESMA
+            addLocalidadeAndStation(cidade, codpostal, tipo);
+            //Por default colocamos o nplataforma como 1,pois se a estação n se encontrava na DB antes à plataforma 1 deverá estar desocupada
+
+        }
+    }
+
+    private static void addLocalidadeAndStation(String cidadePartida, int codpostal, String tipo) throws SQLException{
+        queries.addCityToDB(cidadePartida, codpostal);
+        queries.addStationToDB(cidadePartida, tipo, 1, codpostal);
+    }
+
+    private static void addEstacao() throws SQLException{
+
+    }
+
+    private static void addViagem() throws SQLException{
+        System.out.println("Adicionar Viagem");
+        System.out.println("Data Viagem:");
+
+        System.out.println("Hora Partida:");
+        System.out.println("Hora Chegada:");    //calculate
+        System.out.println("distancia");    //calculate
+        System.out.println("");
     }
 
     private static void alterViagem() throws SQLException{
@@ -259,7 +307,6 @@ class App {
 
     public static String checkIfInArray(String[] array){
         String var;
-        input.nextLine();
         do{
             var = getValString();
         }while (!checkIfInArray(var, array));
@@ -282,6 +329,8 @@ class App {
     }
 
     private static String getValString(){
+        //input.nextLine();       //has problems
+
         System.out.print("> ");
         return input.nextLine();
     }
