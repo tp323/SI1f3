@@ -10,15 +10,10 @@ public class queries {
     
 
     public static void main(String[] args) throws SQLException {    //USED FOR TESTS DELETE ON END
-        //System.out.println(checkIfInDBwithStmt("ident","VIAGEM","123"));
-        //System.out.println(checkIfInDBwithPstmt("ident","VIAGEM","123"));
-        //System.out.println(checkIfIfCityOnPartida("Lisboa"));
-        //addCityToDB("ll");
-        System.out.println(getInt("codpostal", "nome", "LOCALIDADE","Lisboa"));
+        getNumLugaresAutocarro();
     }
 
     // TODO: verificar restrições na base de dados já feita no inicio da execução do programa
-
 
     private static void connect() throws SQLException {
         try {
@@ -28,12 +23,40 @@ public class queries {
         }
     }
 
+    public static int getNumCols(String table) throws SQLException{
+        int val = -1;
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT COUNT(*) FROM ?");
+            pstmt.setString(1,table);
+            rs = pstmt.executeQuery();
+            rs.next();
+            val = rs.getInt(1);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return val;
+    }
+
+    public static void getNumLugaresAutocarro() throws SQLException{
+        try {
+            connect();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT marca, modelo, nlugares FROM AUTOCARROTIPO");
+            printTable(rs,3);
+            //while (rs.next()) System.out.println(rs.getInt(3));   //ON THE WORKS EXTRACT VALUES FROM TABLE
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+    }
+
     public static void reserva(String datares, String modopag, int idviagem) throws SQLException{
         try {
             connect();
             pstmt = con.prepareStatement("INSERT INTO RESERVA (ident, datareserva, modopagamento, viagem) " +
                     "VALUES (?,?,?,?)");
-            pstmt.setInt(1, getLastInt("ident","RESERVA")+1);    //ident reserva
+            pstmt.setInt(1, maxIdentReserva()+1);    //ident reserva
             pstmt.setString(2, datares);    //data da reserva
             pstmt.setString(3, modopag);    //modopagamento
             pstmt.setInt(4, idviagem);    //ident viagem
@@ -68,10 +91,8 @@ public class queries {
             stmt = con.createStatement();
             rs = stmt.executeQuery("SELECT  ident, dataviagem, horapartida, horachegada, distancia, estpartida, estchegada FROM VIAGEM");
             ResultSetMetaData rsmd = rs.getMetaData();
-            int columnsNumber = rsmd.getColumnCount();
-
+            //int columnsNumber = rsmd.getColumnCount();
             System.out.println("| Ident | Data Viagem | Hora Part | Hora Cheg |  Dist |    Estação Part |    Estação Cheg |");
-            //System.out.println("|-------+-------------+-----------+-----------+-------+-----------------+-----------------|");
             while (rs.next()) {
                 System.out.print("|" + fillGap(rs.getInt("ident"),6) + " |  ");
                 System.out.print(rs.getDate("dataviagem") + " |  ");
@@ -94,7 +115,6 @@ public class queries {
             rs = stmt.executeQuery("SELECT ident, dataviagem, horapartida, horachegada, estpartida, b.nome cidadepart, estchegada, LOCALIDADE.nome cidadecheg "
                 + "FROM VIAGEM JOIN ESTACAO ON estchegada = nome JOIN LOCALIDADE ON ESTACAO.localidade = LOCALIDADE.codpostal "
                 + "JOIN ESTACAO a ON estpartida = a.nome JOIN LOCALIDADE b ON a.localidade = b.codpostal");
-
             closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
@@ -107,7 +127,6 @@ public class queries {
             connect();
             pstmt = con.prepareStatement("SELECT 1 FROM VIAGEM JOIN ESTACAO ON estpartida = nome " +
                     "JOIN LOCALIDADE ON ESTACAO.localidade = LOCALIDADE.codpostal WHERE LOCALIDADE.nome = ?");
-
             pstmt.setString(1, element);
             rs = pstmt.executeQuery();
             bol = rs.next();
@@ -124,7 +143,6 @@ public class queries {
             connect();
             pstmt = con.prepareStatement("SELECT 1 FROM VIAGEM JOIN ESTACAO ON estchegada = nome " +
                     "JOIN LOCALIDADE ON ESTACAO.localidade = LOCALIDADE.codpostal WHERE LOCALIDADE.nome = ?");
-
             pstmt.setString(1, element);
             rs = pstmt.executeQuery();
             bol = rs.next();
@@ -141,7 +159,6 @@ public class queries {
             pstmt = con.prepareStatement("INSERT INTO LOCALIDADE (codpostal, nome) VALUES ( ?, ?)");
             pstmt.setInt(1, codpostal);
             pstmt.setString(2, cidade);
-
             pstmt.executeUpdate();
             closeConnection();
         }catch(SQLException sqlex) {
@@ -157,7 +174,6 @@ public class queries {
             pstmt.setString(2, tipo);
             pstmt.setInt(3, nplataforma);
             pstmt.setInt(4, localidade);
-
             pstmt.executeUpdate();
             closeConnection();
         }catch(SQLException sqlex) {
@@ -173,13 +189,26 @@ public class queries {
                     "ESTACAO.localidade = LOCALIDADE.codpostal WHERE LOCALIDADE.nome = ?");
             pstmt.setString(1, cidade);
             rs = pstmt.executeQuery();
-
             numStations = (printTable(rs,1));
             closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }
         return numStations;
+    }
+
+    public static int maxIdentReserva() throws SQLException{   //STATEMENT NOT PREPARED NOT PROTECTED FROM SQL INJECTION
+        int maxInt = -1;
+        try{
+            connect();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT MAX(ident) FROM RESERVA");
+            rs.next();
+            maxInt = rs.getInt(1);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return maxInt;
     }
 
     public static boolean checkIfInDBwithStmt(String attribute, String table, String element) throws SQLException{
@@ -195,12 +224,14 @@ public class queries {
         }return bol;
     }
 
-    public static int getInt(String getattribute, String whereattribute, String table, String element) throws SQLException{
+    //IS STMT
+    public static int getCodpostal(String element) throws SQLException{
         int val = -1;
         try{
             connect();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT " + getattribute + " FROM " + table + " WHERE " + whereattribute + " = '" + element + "'");
+            pstmt = con.prepareStatement("SELECT codpostal FROM LOCALIDADE WHERE nome = ?");
+            pstmt.setString(1, element);
+            rs = pstmt.executeQuery();
             rs.next();
             val = rs.getInt("codpostal");
             closeConnection();
@@ -238,7 +269,6 @@ public class queries {
     }
 
     private static String fillGap(String line ,int spaces) {
-        int emptyspaces=0;
         String finalString = "";
         for(int n=0; spaces>line.length()+n; n++){
             finalString += " ";
@@ -256,8 +286,7 @@ public class queries {
             closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
-        }
-        return maxInt;
+        }return maxInt;
     }
 
     public static int printTable(ResultSet rs, int columnsNumber) throws SQLException {

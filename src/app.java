@@ -25,11 +25,9 @@ class App {
         optionsMenuDisplay();
         switch (input.nextInt()) {
             case 1:
-                input.nextLine();
                 newReserve();
                 break;
             case 2:
-                input.nextLine();
                 alterViagem();
                 break;
             case 3:
@@ -91,17 +89,17 @@ class App {
     private static boolean checkConsent(boolean print) {
         if(print) System.out.println("prima S para confirmar ou qualquer outra tecla para cancelar");
         char confirmExit = input.next().charAt(0);
+        input.nextLine();
         return (confirmExit =='s' || confirmExit =='S');
     }
 
     private static void newReserve() throws SQLException {
         System.out.println("Nova Reserva");
         System.out.println("Data da reserva");
-        //String date = getDateAndTime();
+        String date = getDateAndTime();
 
         System.out.println("Modo de Pagamento");
         System.out.println("Modos de Pagamento permitidos: MB, Pay Pal, CC");
-        //input.nextLine();   // clear line
 
         //String modospag = checkIfInArray(MODOS_PAGAMENTOS);
 
@@ -118,8 +116,6 @@ class App {
         System.out.println("Cidade de Chegada:");
         cidade(tipo);
 
-
-
         // TODO: substituir id viagem por cidade/ estaçao de destino
         // TODO: se não existir tem de se acrescentar viagem
         // TODO: ?? imprimir destinos possiveis, mesmo assim se n existir o destino temos de o acrescentar
@@ -133,7 +129,7 @@ class App {
 
         if(queries.checkIfIfCityOnPartida(cidade)){  //CIDADE PARTIDA EXISTE
             System.out.println("Cidade existe na Base de Dados");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
-            codpostal = queries.getInt("codpostal", "nome", "LOCALIDADE",cidade);
+            codpostal = queries.getCodpostal(cidade);
             System.out.println("Selecione uma das seguintes Estações:");    //para simplificar partimos do principio q casdo haja estações vai ser utilizada uma das mesmas
             System.out.println("Para tal utilize o número que a precede:");
             checkBetweenBoundaries(1,queries.printEstacoesFromLocalidade(cidade));
@@ -325,12 +321,13 @@ class App {
 
     private static int getValInt(){
         System.out.print("> ");
-        return input.nextInt();
+        int val = input.nextInt();
+        input.nextLine();   //consume rest of line
+        return val;
+
     }
 
     private static String getValString(){
-        //input.nextLine();       //has problems
-
         System.out.print("> ");
         return input.nextLine();
     }
