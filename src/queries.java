@@ -355,7 +355,7 @@ public class queries {
                 "                         WHERE atrdiscriminante = 'A')\n" +
                 "                         as E on transporte = E.ident)\n" +
                 "                         as F on F.transporte = BILHETE.transporte\n" +
-                "                         GROUP BY (F.transporte)) as G on H.transporte = G.transporte\n";
+                "                         GROUP BY (F.transporte)) as G on H.transporte = G.transporte";
         try{
             connect();
             pstmt = con.prepareStatement(query);
