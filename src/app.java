@@ -17,6 +17,7 @@ class App {
 
 
     public static void main(String[] args) throws SQLException {
+        //correctDBerrors();
         optionsMenu();
 
     }
@@ -80,6 +81,13 @@ class App {
         System.out.print("> ");
     }
 
+    private static void correctDBerrors() throws SQLException{
+        queries.executeUpdate("SET NOCOUNT ON INSERT INTO TRANSPORTE (ident, viagem, velmaxima, dataentradaservico, atrdiscriminante) " +
+                "VALUES (11, 645, 100, '2020-01-20', 'C')");
+        queries.executeUpdate("SET NOCOUNT ON INSERT INTO COMBOIO (transporte, tipo, ncarruagens) VALUES (11, 'IC', 3)");
+        queries.executeUpdate("SET NOCOUNT ON INSERT INTO LOCOMOTIVA (nserie, comboio, marca) VALUES (295, 11, 'Roco')");
+    }
+
     private static void exit() throws SQLException {
         System.out.println("Confirma Saída do Programa");
         if(checkConsent(true)) System.exit(0);
@@ -92,6 +100,7 @@ class App {
         input.nextLine();
         return (confirmExit =='s' || confirmExit =='S');
     }
+
 
     private static void newReserve() throws SQLException {
         System.out.println("Nova Reserva");

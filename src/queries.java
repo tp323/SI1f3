@@ -1,7 +1,6 @@
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 public class queries {
     private static final String URL = "jdbc:sqlserver://10.62.73.87:1433;user=L3NG_1;password=L3NG_1;databaseName=L3NG_1";
@@ -13,13 +12,22 @@ public class queries {
     
 
     public static void main(String[] args) throws SQLException {    //USED FOR TESTS DELETE ON END
-        //getNumLugaresAutocarro("IVECO","PRO");
-        //List<String> list = getAutocarrosActive();
-        //ListIterator<String> it = list.listIterator();
-        //int numAutocarros = list.size()/2;
-        //System.out.println(getIdViagemWithAutocarroOrComboio(true));
-        //getNumLugAutocarro();
-        getlugaresfromcidade("Portas de Sol");
+        /*getNumLugaresAutocarro("IVECO","PRO");
+        List<String> list = getAutocarrosActive();
+        int numAutocarros = list.size()/2;
+        System.out.println(getIdViagemWithAutocarroOrComboio(true));
+        System.out.println(list);*/
+
+        List<Integer> list = getIdsViagem();
+        int numviagens = list.size();
+        for(int n=0;n<numviagens;n++) {
+            System.out.print(list.get(n) + "  ");
+            System.out.print(getTransport(list.get(n)) + "  ");
+            if(getTransport(list.get(n)) == "autocarro") System.out.println(getNumLugAutocarro(list.get(n)) + "  ");
+            if(getTransport(list.get(n)) == "comboio") System.out.println(getNumLug1Comboio(list.get(n)) + "  " +
+                    getNumLug2Comboio(list.get(n)));
+        }
+
     }
 
     // TODO: verificar restrições na base de dados já feita no inicio da execução do programa
@@ -29,6 +37,17 @@ public class queries {
             con = DriverManager.getConnection(URL); //Estabelecer a ligacao
         } catch (SQLException sqlex) {
             System.out.println("Erro : " + sqlex.getMessage());
+        }
+    }
+
+    public static void executeUpdate(String querry) throws SQLException{
+        try {
+            connect();
+            stmt = con.createStatement();
+            int n = stmt.executeUpdate(querry);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
         }
     }
 
@@ -47,20 +66,89 @@ public class queries {
         }return val;
     }
 
-    public static void getNumLugAutocarro() throws SQLException{
+    public static int getNumLugAutocarro(int idviagem) throws SQLException{
+        int numlug = -1;
         try {
             connect();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT VIAGEM.ident, nlugares FROM ((VIAGEM JOIN TRANSPORTE ON VIAGEM.ident = viagem)" +
-                    " JOIN AUTOCARRO ON TRANSPORTE.ident = AUTOCARRO.transporte) JOIN AUTOCARROTIPO ON " +
-                    "AUTOCARRO.marca = AUTOCARROTIPO.marca AND AUTOCARRO.modelo = AUTOCARROTIPO.modelo " +
-                    "WHERE atrdiscriminante = 'A'");
-            //rs.next();
-            while(rs.next())printTable(rs,2);
+            pstmt = con.prepareStatement("SELECT nlugares FROM ((VIAGEM JOIN TRANSPORTE ON " +
+                    "VIAGEM.ident = viagem) JOIN AUTOCARRO ON TRANSPORTE.ident = AUTOCARRO.transporte)" +
+                    "JOIN AUTOCARROTIPO ON AUTOCARRO.marca = AUTOCARROTIPO.marca AND AUTOCARRO.modelo = " +
+                    "AUTOCARROTIPO.modelo WHERE atrdiscriminante = 'A' AND VIAGEM.ident = ?");
+            pstmt.setInt(1,idviagem);
+            rs = pstmt.executeQuery();
+            rs.next();
+            numlug = rs.getInt(1);
             closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
-        }
+        }return numlug;
+    }
+
+    public static int getNumLug1Comboio(int idviagem) throws SQLException{
+        int numlug1 = -1;
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT nlugclasse1 FROM ((VIAGEM JOIN TRANSPORTE ON " +
+                            "VIAGEM.ident = viagem) JOIN COMBOIO ON TRANSPORTE.ident = COMBOIO.transporte) JOIN " +
+                            "COMBOIOTIPO ON COMBOIO.tipo = COMBOIOTIPO.id WHERE atrdiscriminante = 'C' AND " +
+                            "VIAGEM.ident = ?");
+            pstmt.setInt(1,idviagem);
+            rs = pstmt.executeQuery();
+            rs.next();
+            numlug1 = rs.getInt(1);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return numlug1;
+    }
+
+    public static int getNumLug2Comboio(int idviagem) throws SQLException{
+        int numlug2 = -1;
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT nlugclasse2 FROM ((VIAGEM JOIN TRANSPORTE ON " +
+                    "VIAGEM.ident = viagem) JOIN COMBOIO ON TRANSPORTE.ident = COMBOIO.transporte) JOIN " +
+                    "COMBOIOTIPO ON COMBOIO.tipo = COMBOIOTIPO.id WHERE atrdiscriminante = 'C' AND " +
+                    "VIAGEM.ident = ?");
+            pstmt.setInt(1,idviagem);
+            rs = pstmt.executeQuery();
+            rs.next();
+            numlug2 = rs.getInt(1);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return numlug2;
+    }
+
+    public static String getTransport(int idviagem) {
+        String meiotransporte = "";
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT atrdiscriminante FROM VIAGEM JOIN TRANSPORTE ON " +
+                    "VIAGEM.ident = viagem WHERE VIAGEM.ident = ?");
+            pstmt.setInt(1, idviagem);
+            rs = pstmt.executeQuery();
+            rs.next();
+            meiotransporte = rs.getString(1);
+            if(meiotransporte.equals("A")) meiotransporte = "autocarro";
+            if(meiotransporte.equals("C")) meiotransporte = "comboio";
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return meiotransporte;
+    }
+
+    public static List<Integer> getIdsViagem() {
+        List<Integer> idsviagem = new ArrayList<Integer>();
+        try {
+            connect();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT VIAGEM.ident FROM VIAGEM");
+            while(rs.next()) idsviagem.add(rs.getInt(1));
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return idsviagem;
     }
 
     public static List<String> getAutocarrosActive() throws SQLException{   //NÃO IMPLEMENTA LISTA AUTOCARROS EXISTENTES FORA DE SERVIÇO
