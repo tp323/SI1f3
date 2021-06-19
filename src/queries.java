@@ -1,4 +1,7 @@
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 
 public class queries {
     private static final String URL = "jdbc:sqlserver://10.62.73.87:1433;user=L3NG_1;password=L3NG_1;databaseName=L3NG_1";
@@ -10,7 +13,13 @@ public class queries {
     
 
     public static void main(String[] args) throws SQLException {    //USED FOR TESTS DELETE ON END
-        getNumLugaresAutocarro();
+        //getNumLugaresAutocarro("IVECO","PRO");
+        //List<String> list = getAutocarrosActive();
+        //ListIterator<String> it = list.listIterator();
+        //int numAutocarros = list.size()/2;
+        //System.out.println(getIdViagemWithAutocarroOrComboio(true));
+        getNumLugAutocarro();
+
     }
 
     // TODO: verificar restrições na base de dados já feita no inicio da execução do programa
@@ -38,13 +47,67 @@ public class queries {
         }return val;
     }
 
-    public static void getNumLugaresAutocarro() throws SQLException{
+    public static void getNumLugAutocarro() throws SQLException{
         try {
             connect();
             stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT marca, modelo, nlugares FROM AUTOCARROTIPO");
-            printTable(rs,3);
-            //while (rs.next()) System.out.println(rs.getInt(3));   //ON THE WORKS EXTRACT VALUES FROM TABLE
+            rs = stmt.executeQuery("SELECT VIAGEM.ident, nlugares FROM ((VIAGEM JOIN TRANSPORTE ON VIAGEM.ident = viagem)" +
+                    " JOIN AUTOCARRO ON TRANSPORTE.ident = AUTOCARRO.transporte) JOIN AUTOCARROTIPO ON " +
+                    "AUTOCARRO.marca = AUTOCARROTIPO.marca AND AUTOCARRO.modelo = AUTOCARROTIPO.modelo " +
+                    "WHERE atrdiscriminante = 'A'");
+            //rs.next();
+            while(rs.next())printTable(rs,2);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+    }
+
+    public static List<String> getAutocarrosActive() throws SQLException{   //NÃO IMPLEMENTA LISTA AUTOCARROS EXISTENTES FORA DE SERVIÇO
+        List<String> marcaAndModelo = new ArrayList<>();    // Lista armazena marca em posições pares e modelo em posições impares
+        try {
+            connect();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT marca, modelo FROM AUTOCARRO");
+            while (rs.next()){
+                marcaAndModelo.add(rs.getString(1));
+                marcaAndModelo.add(rs.getString(2));
+            }
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return marcaAndModelo;
+    }
+
+    public static List<Integer> getIdViagemWithAutocarroOrComboio(boolean meiotransp) throws SQLException{
+        //  meiotransp true para Autocarro e false para Comboio
+        List<Integer> idsviagem = new ArrayList<Integer>();
+        char vardisc = 'z';
+        if (meiotransp) vardisc = 'A';
+        if (!meiotransp) vardisc = 'C';
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT viagem FROM TRANSPORTE WHERE atrdiscriminante = ?");
+            pstmt.setString(1, String.valueOf(vardisc));
+            rs = pstmt.executeQuery();
+            while(rs.next()) idsviagem.add(rs.getInt(1));
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return idsviagem;
+    }
+
+    public static void getNumLugaresAutocarro(String marca, String modelo) throws SQLException{
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT nlugares FROM AUTOCARRO JOIN " +
+                    "AUTOCARROTIPO ON (AUTOCARRO.modelo=AUTOCARROTIPO.modelo AND AUTOCARRO.marca=AUTOCARROTIPO.marca) " +
+                    "WHERE AUTOCARRO.marca = ? AND AUTOCARRO.modelo = ?");
+            pstmt.setString(1,marca);
+            pstmt.setString(2,modelo);
+            rs = pstmt.executeQuery();
+            rs.next();
+            System.out.println(rs.getInt(1));
             closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
