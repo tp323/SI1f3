@@ -4,7 +4,7 @@ import java.util.List;
 
 public class queries {
     private static final String URL = "jdbc:sqlserver://10.62.73.87:1433;user=L3NG_1;password=L3NG_1;databaseName=L3NG_1";
-    private static Connection con = null;
+    private static Connection con;
     private static Statement stmt = null;
     private static PreparedStatement pstmt = null;
 
@@ -407,6 +407,56 @@ public class queries {
         }return bol;
     }
 
+    public static void getlugaresfromcidade(String local){
+        String query = "SELECT H.transporte, (nlugares - ocupados) as vazios\n" +
+                "FROM (SELECT nlugares, transporte\n" +
+                "     FROM AUTOCARROTIPO join\n" +
+                "         (SELECT modelo, transporte\n" +
+                "         FROM AUTOCARRO join\n" +
+                "             (SELECT TRANSPORTE.ident\n" +
+                "             FROM TRANSPORTE join\n" +
+                "                 (SELECT ident\n" +
+                "                 FROM VIAGEM join\n" +
+                "                     (SELECT ESTACAO.nome\n" +
+                "                     FROM ESTACAO join\n" +
+                "                         LOCALIDADE L on ESTACAO.localidade = L.codpostal\n" +
+                "                         WHERE L.nome = ?)\n" +
+                "                         as A on estpartida = A.nome)\n" +
+                "                         as B on B.ident = viagem\n" +
+                "                         WHERE atrdiscriminante = 'A')\n" +
+                "                         as C on transporte = C.ident)\n" +
+                "                         as D on AUTOCARROTIPO.modelo = D.modelo) as H join\n" +
+                "     (SELECT F.transporte, COUNT(F.transporte) as ocupados\n" +
+                "     FROM BILHETE join\n" +
+                "         (SELECT transporte\n" +
+                "          FROM LUGAR join\n" +
+                "              (SELECT TRANSPORTE.ident\n" +
+                "              FROM TRANSPORTE join\n" +
+                "                 (SELECT ident\n" +
+                "                 FROM VIAGEM join\n" +
+                "                     (SELECT ESTACAO.nome\n" +
+                "                     FROM ESTACAO join\n" +
+                "                         LOCALIDADE L on ESTACAO.localidade = L.codpostal\n" +
+                "                         WHERE L.nome = ?)\n" +
+                "                         as A on estpartida = A.nome)\n" +
+                "                         as B on B.ident = viagem\n" +
+                "                         WHERE atrdiscriminante = 'A')\n" +
+                "                         as E on transporte = E.ident)\n" +
+                "                         as F on F.transporte = BILHETE.transporte\n" +
+                "                         GROUP BY (F.transporte)) as G on H.transporte = G.transporte\n";
+        try{
+            connect();
+            pstmt = con.prepareStatement(query);
+            pstmt.setString(1, local);
+            pstmt.setString(2, local);
+            rs = pstmt.executeQuery();
+            while(rs.next())printTable(rs,2);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+    }
+
     private static String fillGap(int number ,int spaces) {
         int numberOfDigits=0;
         String stringNum = "";
@@ -454,13 +504,13 @@ public class queries {
     private static void closeConnection() throws SQLException {
         if (rs != null) rs.close(); //libertar os recursos do ResultSet
         if (stmt != null) stmt.close(); //libertar os recursos do Statement
-        if (stmt != null) stmt.close(); //libertar os recursos do Prepared Statement
+        if (pstmt != null) pstmt.close(); //libertar os recursos do Prepared Statement
         if (con != null) con.close(); //fechar ligacao
     }
 
     public static void closeResources() throws SQLException {
         if (rs != null) rs.close(); //libertar os recursos do ResultSet
         if (stmt != null) stmt.close(); //libertar os recursos do Statement
-        if (stmt != null) stmt.close(); //libertar os recursos do Prepared Statement
+        if (pstmt != null) pstmt.close(); //libertar os recursos do Prepared Statement
     }
 }
