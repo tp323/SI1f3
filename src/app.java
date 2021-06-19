@@ -40,7 +40,7 @@ class App {
 
                 break;
             case 6:
-
+                lugaresVazios();
                 break;
             case 7:
 
@@ -178,6 +178,21 @@ class App {
         System.out.println("Escolha de entre as viagens disponiveis, através do digito que a precede");
         // TODO: GET MAX VALUE
         //checkBetweenBoundaries(1,max);
+
+    }
+
+    private static void lugaresVazios() throws SQLException{
+        System.out.println("Lugares Vazios nos transportes que partem de determinada cidade");
+        System.out.println("Que cidade deseja verificar?");
+        String cidade = null;
+        do {
+            cidade = input.nextLine();
+        }while (cidade == "");
+        System.out.println("Confirma a sua escolha?");
+        if (checkConsent(true)){
+            System.out.println("Números de lugares disponiveis na cidade selecionada:");
+            queries.getlugaresfromcidade(cidade);
+        }
 
     }
 
