@@ -44,16 +44,16 @@ class App {
                 lugaresVazios();
                 break;
             case 7:
-
+                sumOfPrice();
                 break;
             case 8:
-
+                averageAge();
                 break;
             case 9:
-
+                travelintimestamp();
                 break;
             case 10:
-
+                typeofpaymentmethod();
                 break;
             case 11:
                 exit();
@@ -200,9 +200,76 @@ class App {
         System.out.println("Confirma a sua escolha?");
         if (checkConsent(true)){
             System.out.println("Números de lugares disponiveis na cidade selecionada:");
+            System.out.println("  Transporte | NºLugares Vazios");
             queries.getlugaresfromcidade(cidade);
         }
 
+    }
+
+
+    private static void sumOfPrice() throws SQLException{
+        System.out.println("Soma de preços para certa categoria");
+        System.out.println("Que categoria quer selecionar? crianca, jovem, adulto, senior, militar");
+        String categoria = null;
+        do {
+            categoria = input.nextLine();
+        }while (categoria == "");
+        if (checkConsent(true)) {
+            String sum = queries.getsumofprice(categoria);
+            if (sum == "" || sum == null){
+                System.out.println("Não foram vendidos bilhetes desta categoria");
+            }else {
+                System.out.println("Soma do valor dos bilhetes: " + sum + "€");
+            }
+        }
+    }
+
+    private static void averageAge(){
+        System.out.println("Média de idades por reserva");
+        System.out.println("Confirma a sua escolha?");
+        if (checkConsent(true)){
+            System.out.println("      Reserva |      Data da reserva      | Media de idades");
+            queries.avgbyreserve();
+        }
+    }
+
+    private static void travelintimestamp() {
+        System.out.println("Viagens entre localidades numa janela de tempo");
+        String localpartida = "";
+        String localchegada = "";
+        String horapartida = "";
+        String horachegada = "";
+        System.out.println("Localidade de partida?");
+        do {
+            localpartida = input.nextLine();
+        } while (localpartida == "");
+        System.out.println("Localidade de chegada?");
+        do {
+            localchegada = input.nextLine();
+        } while (localchegada == "");
+        System.out.println("Hora de partida?  HH:MM:SS");
+        do {
+            horapartida = input.nextLine();
+        } while (horapartida == "");
+        System.out.println("Hora de chegada?  HH:MM:SS");
+        do {
+            horachegada = input.nextLine();
+        } while (horachegada == "");
+
+        if (checkConsent(true)) {
+            System.out.println("Viagens entre " + localpartida + " e " + localchegada + " desde " + horapartida + " ás " + horachegada);
+            System.out.println("    Est.Partida |   Est.Chegada   |     Viagem      ");
+            queries.travelsbytimestamp(localpartida,localchegada,horapartida,horachegada);
+        }
+    }
+
+    private static void typeofpaymentmethod(){
+        System.out.println("Média de idades por método de pagamento");
+        System.out.println("Confirma a sua escolha?");
+        if (checkConsent(true)){
+            System.out.println("    Pagamento  |   Média de Idades");
+            queries.avgbypayment();
+        }
     }
 
     private static String getDateAndTime(){

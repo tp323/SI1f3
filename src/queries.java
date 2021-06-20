@@ -17,7 +17,7 @@ public class queries {
         int numAutocarros = list.size()/2;
         System.out.println(getIdViagemWithAutocarroOrComboio(true));
         System.out.println(list);*/
-
+        /*
         List<Integer> list = getIdsViagem();
         int numviagens = list.size();
         for(int n=0;n<numviagens;n++) {
@@ -26,7 +26,8 @@ public class queries {
             if(getTransport(list.get(n)) == "autocarro") System.out.println(getNumLugAutocarro(list.get(n)) + "  ");
             if(getTransport(list.get(n)) == "comboio") System.out.println(getNumLug1Comboio(list.get(n)) + "  " +
                     getNumLug2Comboio(list.get(n)));
-        }
+        }*/
+        getlugaresfromcidade("Seixal");
 
     }
 
@@ -450,8 +451,92 @@ public class queries {
             pstmt.setString(1, local);
             pstmt.setString(2, local);
             rs = pstmt.executeQuery();
-            while(rs.next())printTable(rs,2);
+            printTable(rs,2);
             closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+    }
+
+    public static String getsumofprice(String categoria){
+        String soma = null;
+        String query = "SELECT sum(preco) as soma\n" +
+                "FROM LUGARTIPO\n" +
+                "WHERE nome = ?\n" +
+                "GROUP BY nome";
+        try{
+            connect();
+            pstmt = con.prepareStatement(query);
+            pstmt.setString(1, categoria);
+            rs = pstmt.executeQuery();
+            rs.next();
+            soma = rs.getString(1);
+            closeConnection();
+
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+        return soma;
+    }
+
+    public static void avgbyreserve(){
+        String query = "SELECT B.reserva, B.datareserva, AVG(B.idade) as average\n" +
+                "FROM (SELECT reserva, datareserva, (YEAR(current_timestamp) - YEAR(dtnascimento)) as idade\n" +
+                "     FROM PASSAGEIRO join\n" +
+                "        (SELECT reserva, datareserva, passageiro\n" +
+                "        FROM BILHETE join RESERVA R2 on BILHETE.reserva = R2.ident)\n" +
+                "            as A on passageiro = nid) as B\n" +
+                "GROUP BY B.reserva, B.datareserva";
+
+        try{
+            connect();
+            pstmt = con.prepareStatement(query);
+            rs = pstmt.executeQuery();
+
+            printTable(rs,3);
+            closeConnection();
+
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+
+    }
+
+    public static void travelsbytimestamp(String localpartida, String localchegada, String horapartida, String horachegada){
+        String query = "SELECT  estpartida , estchegada, Viagem.ident viagem \n" +
+                "\tFROM VIAGEM JOIN ESTACAO ON estchegada = nome JOIN LOCALIDADE ON ESTACAO.localidade = LOCALIDADE.codpostal \n" +
+                "\tJOIN ESTACAO a ON estpartida = a.nome JOIN LOCALIDADE b ON a.localidade = b.codpostal \n" +
+                "\tWHERE LOCALIDADE.nome = ? AND b.nome = ? AND horapartida >= ? AND horachegada <= ?";
+
+        try{
+            connect();
+            pstmt = con.prepareStatement(query);
+            pstmt.setString(1, localchegada);
+            pstmt.setString(2, localpartida);
+            pstmt.setString(3, horapartida);
+            pstmt.setString(4, horachegada);
+            rs = pstmt.executeQuery();
+            printTable(rs,3);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+
+    }
+
+    public static void avgbypayment(){
+        String query = "SELECT modopagamento, AVG(datediff(YEAR , PASSAGEIRO.dtnascimento, CURRENT_TIMESTAMP)) AS avg_age_by_payment_method\n" +
+                "\tFROM (PASSAGEIRO JOIN BILHETE ON nid = passageiro JOIN RESERVA ON reserva = ident)\n" +
+                "\tGROUP BY modopagamento;";
+
+        try{
+            connect();
+            pstmt = con.prepareStatement(query);
+            rs = pstmt.executeQuery();
+
+            printTable(rs,2);
+            closeConnection();
+
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }
@@ -494,11 +579,13 @@ public class queries {
         int numRows = 1;
         while (rs.next()) {
             for(int i = 1 ; i <= columnsNumber; i++){
-                if(i==1) System.out.print(numRows + " > ");
-                System.out.print(rs.getString(i) + " "); //Print one element of a row
+                if(i==1) System.out.print(numRows + " >     ");
+                System.out.print(rs.getString(i) + "      "); //Print one element of a row
             }System.out.println();//Move to the next line to print the next row.
             numRows++;
-        }return numRows-1;
+        }
+        if(numRows == 1) System.out.println("Não existem valores para a interrogação feitas");
+        return numRows-1;
     }
 
     private static void closeConnection() throws SQLException {
