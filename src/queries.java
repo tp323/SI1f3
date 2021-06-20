@@ -4,29 +4,13 @@ import java.util.List;
 
 public class queries {
     private static final String URL = "jdbc:sqlserver://10.62.73.87:1433;user=L3NG_1;password=L3NG_1;databaseName=L3NG_1";
-    private static Connection con;
+    private static Connection con = null;
     private static Statement stmt = null;
     private static PreparedStatement pstmt = null;
-
     private static ResultSet rs = null;
     
 
     public static void main(String[] args) throws SQLException {    //USED FOR TESTS DELETE ON END
-        /*getNumLugaresAutocarro("IVECO","PRO");
-        List<String> list = getAutocarrosActive();
-        int numAutocarros = list.size()/2;
-        System.out.println(getIdViagemWithAutocarroOrComboio(true));
-        System.out.println(list);*/
-
-        List<Integer> list = getIdsViagem();
-        int numviagens = list.size();
-        for(int n=0;n<numviagens;n++) {
-            System.out.print(list.get(n) + "  ");
-            System.out.print(getTransport(list.get(n)) + "  ");
-            if(getTransport(list.get(n)) == "autocarro") System.out.println(getNumLugAutocarro(list.get(n)) + "  ");
-            if(getTransport(list.get(n)) == "comboio") System.out.println(getNumLug1Comboio(list.get(n)) + "  " +
-                    getNumLug2Comboio(list.get(n)));
-        }
 
     }
 
@@ -51,12 +35,28 @@ public class queries {
         }
     }
 
-    public static int getNumCols(String table) throws SQLException{
+    public static List<Integer> getActiveTransports() throws SQLException{
+        List<Integer> activetransports = new ArrayList<Integer>();
+        try {
+            connect();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT viagem FROM BILHETE JOIN LUGAR ON BILHETE.nlugar = LUGAR.numero JOIN " +
+                    "TRANSPORTE ON LUGAR.transporte = TRANSPORTE.ident");
+            while(rs.next()) activetransports.add(rs.getInt(1));
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return activetransports;
+    }
+
+    public static int getNumLugaresOcupados(int numlugaresocupados) throws SQLException{
         int val = -1;
         try {
             connect();
-            pstmt = con.prepareStatement("SELECT COUNT(*) FROM ?");
-            pstmt.setString(1,table);
+            pstmt = con.prepareStatement("SELECT COUNT(BILHETE.transporte) FROM BILHETE JOIN LUGAR ON " +
+                    "BILHETE.nlugar = LUGAR.numero JOIN TRANSPORTE ON LUGAR.transporte = TRANSPORTE.ident " +
+                    "WHERE viagem = ?");
+            pstmt.setInt(1, numlugaresocupados);
             rs = pstmt.executeQuery();
             rs.next();
             val = rs.getInt(1);
@@ -86,9 +86,10 @@ public class queries {
 
     public static int getNumLug1Comboio(int idviagem) throws SQLException{
         int numlug1 = -1;
+        int numlug2 = -1;
         try {
             connect();
-            pstmt = con.prepareStatement("SELECT nlugclasse1 FROM ((VIAGEM JOIN TRANSPORTE ON " +
+            pstmt = con.prepareStatement("SELECT nlugclasse1, nlugclasse2 FROM ((VIAGEM JOIN TRANSPORTE ON " +
                             "VIAGEM.ident = viagem) JOIN COMBOIO ON TRANSPORTE.ident = COMBOIO.transporte) JOIN " +
                             "COMBOIOTIPO ON COMBOIO.tipo = COMBOIOTIPO.id WHERE atrdiscriminante = 'C' AND " +
                             "VIAGEM.ident = ?");
@@ -96,10 +97,11 @@ public class queries {
             rs = pstmt.executeQuery();
             rs.next();
             numlug1 = rs.getInt(1);
+            numlug2 = rs.getInt(2);
             closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
-        }return numlug1;
+        }return numlug1+numlug2;
     }
 
     public static int getNumLug2Comboio(int idviagem) throws SQLException{
@@ -201,6 +203,86 @@ public class queries {
             System.out.println("Erro: " + sqlex.getMessage());
         }
     }
+
+    public static int getVelMax(int viagem) throws SQLException{
+        int velmax = -1;
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT velmaxima FROM VIAGEM JOIN TRANSPORTE ON VIAGEM.ident = viagem" +
+                    " WHERE viagem = ?");
+            pstmt.setInt(1,viagem);
+            rs = pstmt.executeQuery();
+            rs.next();
+            velmax = rs.getInt(1);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return velmax;
+    }
+
+    public static int getDist(int viagem) throws SQLException{
+        int velmax = -1;
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT distancia FROM VIAGEM WHERE ident = ?");
+            pstmt.setInt(1,viagem);
+            rs = pstmt.executeQuery();
+            rs.next();
+            velmax = rs.getInt(1);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return velmax;
+    }
+
+    public static String getHoraPart(int viagem) throws SQLException{
+        Time horapart = null;
+        String horapartida = "";
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT horapartida FROM VIAGEM WHERE ident = ?");
+            pstmt.setInt(1,viagem);
+            rs = pstmt.executeQuery();
+            rs.next();
+            horapart = rs.getTime(1);
+            closeConnection();
+            horapartida = "" + horapart;
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return horapartida;
+    }
+
+    public static String getHoraCheg(int viagem) throws SQLException{
+        Time horacheg = null;
+        String horachegada = "";
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT horachegada FROM VIAGEM WHERE ident = ?");
+            pstmt.setInt(1,viagem);
+            rs = pstmt.executeQuery();
+            rs.next();
+            horacheg = rs.getTime(1);
+            closeConnection();
+            horachegada = "" + horacheg;
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return horachegada;
+    }
+
+    public static void updateDataChegada(int viagem, String time){
+        try {
+            connect();
+            pstmt = con.prepareStatement("UPDATE VIAGEM SET horachegada  = ? WHERE ident = ?");
+            pstmt.setTime(1, Time.valueOf(time));
+            pstmt.setInt(2, viagem);
+            pstmt.executeUpdate();
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+    }
+
+
 
     public static void reserva(String datares, String modopag, int idviagem) throws SQLException{
         try {

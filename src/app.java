@@ -1,7 +1,8 @@
 import java.sql.SQLException;
-import java.util.Calendar;
-import java.util.Scanner;
-import java.util.TimeZone;
+import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 class App {
 
@@ -18,6 +19,8 @@ class App {
 
     public static void main(String[] args) throws SQLException {
         //correctDBerrors();
+        //checkBilhetesAndCapacity();
+        //checkHoraChegada();
         optionsMenu();
 
     }
@@ -86,6 +89,54 @@ class App {
                 "VALUES (11, 645, 100, '2020-01-20', 'C')");
         queries.executeUpdate("SET NOCOUNT ON INSERT INTO COMBOIO (transporte, tipo, ncarruagens) VALUES (11, 'IC', 3)");
         queries.executeUpdate("SET NOCOUNT ON INSERT INTO LOCOMOTIVA (nserie, comboio, marca) VALUES (295, 11, 'Roco')");
+    }
+
+    private static void checkBilhetesAndCapacity() throws SQLException{
+        List<Integer> transp = queries.getActiveTransports();
+        Collections.sort(transp);
+        sortList(transp);
+        for (Integer integer : transp) {
+            int lugdisp = -1;
+            if (queries.getTransport(integer).equals("autocarro")) lugdisp=queries.getNumLugAutocarro(integer);
+            if (queries.getTransport(integer).equals("comboio")) lugdisp=queries.getNumLug1Comboio(integer);
+            if(lugdisp<queries.getNumLugaresOcupados(integer)) System.out.print("DB INCONSISTENT");
+        }
+    }
+
+    private static void checkHoraChegada() throws SQLException{
+        //tempochegada = horapartida + distancia*velmaxima
+        List<Integer> viagens = queries.getIdsViagem();
+        for (Integer viagem : viagens) {
+            int vel = queries.getVelMax(viagem);
+            int dist = queries.getDist(viagem);
+            //5min margem de erro e arredondamento
+            int hour = (getMinutes(queries.getHoraPart(viagem)) + dist / vel * 60 + (dist % vel) * 60 / 100 + 5) / 60;
+            int minute = (getMinutes(queries.getHoraPart(viagem)) + dist / vel * 60 + (dist % vel) * 60 / 100 + 5) % 60;
+            if (hour > 23) {        //limitação DB horachegada>horapartida
+                hour = 23;
+                minute = 59;
+            }
+            String timechegada = "";
+            if(hour<10) timechegada += "0";
+            timechegada += hour + ":";
+            if(minute<10) timechegada += "0";
+            timechegada += minute + ":00";
+            if (!queries.getHoraCheg(viagem).equals(timechegada)) queries.updateDataChegada(viagem, timechegada);
+        }
+    }
+
+    private static int getMinutes(String time){
+        String hora = ""+time.charAt(0)+time.charAt(1);
+        String minute = ""+time.charAt(3)+time.charAt(4);
+        int horas = Integer.parseInt(hora);
+        int minutes = Integer.parseInt(minute);
+        minutes += horas*60;
+        return minutes;
+    }
+
+    private static List<Integer> sortList(List<Integer> list){
+        for(int n=1;n<list.size();n++) if(list.get(n).equals(list.get(n - 1))) list.remove(n);
+        return list;
     }
 
     private static void exit() throws SQLException {
