@@ -343,7 +343,9 @@ public class queries {
         try {
             connect();
             pstmt = con.prepareStatement("UPDATE VIAGEM SET ident = ?, dataviagem = ?, horapartida = ?," +
-                    " horachegada  = ?, distancia = ?, estpartida = ?, estchegada = ?");
+                    " horachegada  = ?, distancia = ?, estpartida = ?, estchegada = ?" +
+                    " WHERE ident = ?");
+
             pstmt.setInt(1,ident);
             pstmt.setDate(2, Date.valueOf(data));
             pstmt.setTime(3, Time.valueOf(timepart));
@@ -351,7 +353,9 @@ public class queries {
             pstmt.setInt(5, dist);
             pstmt.setString(6, estpart);
             pstmt.setString(7, estcheg);
+            pstmt.setInt(8,ident);
             pstmt.executeUpdate();
+            closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }
@@ -835,5 +839,5 @@ public class queries {
         if (pstmt != null) pstmt.close(); //libertar os recursos do Prepared Statement
         if (con != null) con.close(); //fechar ligacao
     }
-    
+
 }
