@@ -591,6 +591,157 @@ public class queries {
         }return bol;
     }
 
+    public static boolean checkOutOfService(){
+        String query = "SELECT matricula\n" +
+                "FROM FORADESERVICO";
+
+        Boolean exists = true;
+
+        try{
+            connect();
+            pstmt = con.prepareStatement(query);
+            rs = pstmt.executeQuery();
+            closeConnection();
+
+        }catch(SQLException sqlex1) {
+            System.out.println("Não existe nenhuma tabela para os autcarros fora de serviço...");
+            exists = false;
+            System.out.println("Esta será agora adicionada á nossa base de dados!");
+
+            query = "CREATE TABLE FORADESERVICO (\n" +
+                    "    matricula nchar(8) check([matricula] like ('[A-Z][A-Z]-[0-9][0-9]-[A-Z][A-Z]')),\n" +
+                    "\tdatarevisao date not null check (DATEDIFF(day, getdate(),datarevisao) > 0),\n" +
+                    "\tmarca nchar(10),\n" +
+                    "\tmodelo nchar(6),\n" +
+                    "\tprimary key (matricula),\n" +
+                    "    foreign key (marca,modelo) references AUTOCARROTIPO(marca, modelo)\n" +
+                    "\n" +
+                    ")";
+
+            try{
+                connect();
+                pstmt = con.prepareStatement(query);
+                pstmt.executeUpdate();
+                closeConnection();
+                System.out.println("A tabela terá sido gerada, por favor tente novamente");
+            }catch(SQLException sqlex2) {
+                System.out.println("Error: " + sqlex2.getMessage());
+            }
+        }
+        return exists;
+    }
+
+    public static void busrelatedtuples(String matricula){
+        String query = "SELECT DISTINCT BILHETE.transporte, V.ident, matricula, datarevisao, marca, modelo\n" +
+                "FROM BILHETE join AUTOCARRO A on BILHETE.transporte = A.transporte join TRANSPORTE T on T.ident = A.transporte join VIAGEM V on V.ident = T.viagem\n" +
+                "WHERE matricula = ?";
+
+        try{
+            connect();
+            pstmt = con.prepareStatement(query);
+            pstmt.setString(1, matricula);
+            rs = pstmt.executeQuery();
+            rs.next();
+            int transporte = rs.getInt(1);
+            int viagem = rs.getInt(2);
+            matricula = rs.getString(3);
+            String datarevisao = rs.getString(4);
+            String marca = rs.getString(5);
+            String modelo = rs.getString(6);
+            closeConnection();
+
+            try {
+                String query1 = "DELETE FROM BILHETE\n" +
+                                "WHERE transporte = ?";
+
+                connect();
+                pstmt = con.prepareStatement(query1);
+                pstmt.setInt(1, transporte);
+                pstmt.executeUpdate();
+                closeConnection();
+
+            }catch(SQLException sqlex) {
+                System.out.println("Erro: " + sqlex.getMessage());
+            }
+
+            try {
+                String query1 = "DELETE FROM LUGAR\n" +
+                        "WHERE transporte = ?";
+
+                connect();
+                pstmt = con.prepareStatement(query1);
+                pstmt.setInt(1, transporte);
+                pstmt.executeUpdate();
+                closeConnection();
+
+            }catch(SQLException sqlex) {
+                System.out.println("Erro: " + sqlex.getMessage());
+            }
+
+            try {
+                String query1 = "DELETE FROM VIAGEM\n" +
+                        "WHERE ident = ?";
+
+                connect();
+                pstmt = con.prepareStatement(query1);
+                pstmt.setInt(1, viagem);
+                pstmt.executeUpdate();
+                closeConnection();
+
+            }catch(SQLException sqlex) {
+                System.out.println("Erro: " + sqlex.getMessage());
+            }
+
+            try {
+                String query1 = "insert into FORADESERVICO values\n" +
+                        "            (?,?,?,?)";
+
+                connect();
+                pstmt = con.prepareStatement(query1);
+                pstmt.setString(1, matricula);
+                pstmt.setString(2, datarevisao);
+                pstmt.setString(3, marca);
+                pstmt.setString(4, modelo);
+                pstmt.executeUpdate();
+                closeConnection();
+
+            }catch(SQLException sqlex) {
+                System.out.println("Erro: " + sqlex.getMessage());
+            }
+
+
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+
+
+
+    }
+
+    public static String getsumofkilometers(String matricula){
+        String query = "SELECT matricula, sum(distancia) as kilometragem\n" +
+                "FROM AUTOCARRO JOIN TRANSPORTE T on T.ident = AUTOCARRO.transporte JOIN VIAGEM V on V.ident = T.viagem\n" +
+                "WHERE (datediff(day ,CURRENT_TIMESTAMP,dataviagem) < 0 or (datediff(day ,CURRENT_TIMESTAMP,dataviagem) = 0 and datediff(second , cast(CURRENT_TIMESTAMP as time (0)), horachegada ) <= 0)) and matricula = ?\n" +
+                "group by matricula";
+
+        String soma = "";
+
+        try{
+            connect();
+            pstmt = con.prepareStatement(query);
+            pstmt.setString(1, matricula);
+            rs = pstmt.executeQuery();
+            rs.next();
+            soma = rs.getString(2);
+            closeConnection();
+
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+        return soma;
+
+    }
+
     public static void getlugaresfromcidade(String local){
         String query = "SELECT H.transporte, (nlugares - ocupados) as vazios\n" +
                 "FROM (SELECT nlugares, transporte\n" +
