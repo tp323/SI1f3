@@ -384,6 +384,24 @@ public class queries {
         }
     }
 
+    public static void createViagem(String data, String timepart, String timecheg, int dist, String estpart, String estcheg) throws SQLException{
+        try {
+            connect();
+            pstmt = con.prepareStatement("INSERT INTO EMPLOYEE (ident, dataviagem, horapartida, horachegada, " +
+                    "distancia, estpartida, estchegada) VALUES (?,?,?,?,?,?,?)");
+            pstmt.setInt(1,getLastInt("ident","VIAGEM")+1);
+            pstmt.setDate(2, Date.valueOf(data));
+            pstmt.setTime(3, Time.valueOf(timepart));
+            pstmt.setTime(4, Time.valueOf(timecheg));
+            pstmt.setInt(5, dist);
+            pstmt.setString(6, estpart);
+            pstmt.setString(7, estcheg);
+            pstmt.executeUpdate();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+    }
+
     public static void alterViagem(Date data, Time timepart, Time timecheg, int dist, String estpart, String estcheg) throws SQLException{
         try {
             connect();
@@ -498,8 +516,8 @@ public class queries {
         }
     }
 
-    public static String[] printEstacoesFromLocalidade(String cidade){
-        String[] stations = new String[2];
+    public static List<String> printEstacoesFromLocalidade(String cidade){
+        List<String> stations = new ArrayList<String>();
         try{
             connect();
             pstmt = con.prepareStatement("SELECT ESTACAO.nome FROM ESTACAO JOIN  LOCALIDADE ON " +
@@ -507,7 +525,7 @@ public class queries {
             pstmt.setString(1, cidade);
             rs = pstmt.executeQuery();
             for(int n=0; rs.next(); n++) {
-                stations[n] = rs.getString(1);
+                stations.add(rs.getString(1));
                 System.out.println(rs.getString(1));
             }
             closeConnection();
@@ -519,19 +537,14 @@ public class queries {
 
     public static int maxIdentReserva() throws SQLException{   //STATEMENT NOT PREPARED NOT PROTECTED FROM SQL INJECTION
         int maxInt = -1;
-        try{
-            connect();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT MAX(ident) FROM RESERVA");
-            rs.next();
-            maxInt = rs.getInt(1);
-            closeConnection();
-        }catch(SQLException sqlex) {
-            System.out.println("Erro: " + sqlex.getMessage());
-        }return maxInt;
+        stmt = con.createStatement();
+        rs = stmt.executeQuery("SELECT MAX(ident) FROM RESERVA");
+        rs.next();
+        maxInt = rs.getInt(1);
+        return maxInt;
     }
 
-    public static boolean checkViagem(String estpart, String estcheg) throws SQLException{
+    public static boolean checkViagem(String estpart, String estcheg){
         boolean exists = false;
         try{
             connect();
