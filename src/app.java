@@ -177,7 +177,6 @@ class App {
 
     private static void newReserve() throws SQLException {
         System.out.println("Nova Reserva");
-        //System.out.println("Data da reserva");
         String date = getCurrentDateAndTime();
 
         System.out.println("Modo de Pagamento");
@@ -200,20 +199,15 @@ class App {
 
         int idviagem = -1;
 
-       if(queries.checkViagem(estpart, estcheg)) {
-           idviagem = queries.getIdViagem(estpart, estcheg);  //viagem exists get viagemid
+       if(queries.checkViagem(estpart, estcheg)) idviagem = queries.getIdViagem(estpart, estcheg);  //viagem exists get viagemid
+       else idviagem=addViagem(estpart,estcheg);
 
-       }
-
-        // TODO: substituir id viagem por cidade/ estaçao de destino
-        // TODO: se não existir tem de se acrescentar viagem
-
-        queries.reserva(date ,modospag ,idviagem);
         if (modospag.equals("MB")){
             System.out.println("Número de telefone:");
             String num = getValString();
             queries.insertIntoPagMBway(queries.getLastInt("ident","RESERVA"), num);
         }
+        queries.reserva(date,modospag,idviagem);
     }
 
     private static String cidade(String tipo) throws SQLException {
@@ -225,7 +219,7 @@ class App {
             System.out.println("Cidade existe na Base de Dados");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
             codpostal = queries.getCodpostal(cidade);
             System.out.println("Escolha uma das seguintes Estações:");    //para simplificar partimos do principio q casdo haja estações vai ser utilizada uma das mesmas
-            checkIfInArray(queries.printEstacoesFromLocalidade(cidade));
+            checkIfInArray(listToArray(queries.printEstacoesFromLocalidade(cidade)));
             // MAYBE ADD CHECK TO STATION TO VERIFY IF IT ALLOWS THE MEANS OF TRANSPORTATION
         }else{  //CIDADE NÃO EXISTE
             System.out.println("Cidade não existe na DataBase");
@@ -245,18 +239,20 @@ class App {
         queries.addStationToDB(cidadePartida, tipo, 1, codpostal);
     }
 
-    private static void addEstacao() throws SQLException{
-
-    }
-
-    private static void addViagem() throws SQLException{
+    private static int addViagem(String estpart, String estcheg) throws SQLException{
+        int idviagem = -1;
         System.out.println("Adicionar Viagem");
         System.out.println("Data Viagem:");
-
+        String datapart = getDate();
         System.out.println("Hora Partida:");
-        System.out.println("Hora Chegada:");    //calculate
-        System.out.println("distancia");    //calculate
-        System.out.println("");
+        String timepart = getTime();
+        System.out.println("Hora Chegada:");
+        String timecheg = getTime();
+        System.out.println("Distância:");
+        int dist = getValInt();
+        queries.createViagem(datapart,timepart,timecheg,dist,estpart,estcheg);
+        idviagem = queries.getLastInt("ident","VIAGEM");
+        return idviagem;
     }
 
     private static void alterViagem() throws SQLException{
@@ -519,6 +515,14 @@ class App {
     }
 
     public static boolean checkIfBelowMax(int var, int max) {return var >= max;}
+
+    public static String[] listToArray(List<String> list){
+        String[] array = new String[list.size()];
+        for (int n=0; n<list.size(); n++){
+            array[n] = list.get(n);
+        }
+        return array;
+    }
 
     public static String checkIfInArray(String[] array){
         String var;
