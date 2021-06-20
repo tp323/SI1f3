@@ -93,11 +93,13 @@ class App {
     }
 
     private static void correctDBerrors() throws SQLException{
+
         if(!queries.checkIfTransporte11Exists()) {
             queries.executeUpdate("SET NOCOUNT ON INSERT INTO TRANSPORTE (ident, viagem, velmaxima, dataentradaservico, atrdiscriminante) " +
                     "VALUES (11, 645, 100, '2020-01-20', 'C')");
             queries.executeUpdate("SET NOCOUNT ON INSERT INTO COMBOIO (transporte, tipo, ncarruagens) VALUES (11, 'IC', 3)");
             queries.executeUpdate("SET NOCOUNT ON INSERT INTO LOCOMOTIVA (nserie, comboio, marca) VALUES (295, 11, 'Roco')");
+            queries.executeUpdate("");
         }
     }
 
@@ -156,6 +158,7 @@ class App {
         for (Integer reserva : reservas) {
             if (!queries.checkIfExistsinPagMBway(reserva)) queries.insertIntoPagMBway(reserva, defaultnumtel);
         }
+
     }
 
     private static void makeSureAPncarruagens6() {

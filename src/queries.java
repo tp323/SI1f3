@@ -319,7 +319,7 @@ public class queries {
         try {
             connect();
             stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT ident FROM RESERVA WHERE modopagamento = 'MB'");
+            rs = stmt.executeQuery("SELECT ident FROM RESERVA WHERE modopagamento = 'MBWAY'");
             while(rs.next()) list.add(rs.getInt(1));
             closeConnection();
         }catch(SQLException sqlex) {
