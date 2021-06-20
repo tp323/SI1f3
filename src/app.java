@@ -35,7 +35,7 @@ class App {
                 alterViagem();
                 break;
             case 3:
-
+                outofservice();
                 break;
             case 4:
 
@@ -240,6 +240,26 @@ class App {
         //checkBetweenBoundaries(1,max);
 
     }
+
+    private static void outofservice() throws SQLException{
+        System.out.println("Colocar um autocarro fora de serviço");
+        System.out.println("Que autocarro deseja verificar?  ll-nn-ll, l-> letra, n-> numero ");
+        String matricula = null;
+        do {
+            matricula = input.nextLine();
+        }while (matricula == "");
+        System.out.println("Confirma a sua escolha?");
+        if (checkConsent(true)) {
+            if(!queries.checkOutOfService());
+            else {
+                queries.busrelatedtuples(matricula);
+            }
+
+
+        }
+
+    }
+
 
     private static void buskilometers() throws SQLException{
         System.out.println("Número de kilometragem de um autocarro");
