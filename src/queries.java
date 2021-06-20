@@ -1,3 +1,5 @@
+import org.w3c.dom.ls.LSOutput;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +13,8 @@ public class queries {
     
 
     public static void main(String[] args) throws SQLException {    //USED FOR TESTS DELETE ON END
-
+        System.out.println(checkViagem("Urbanizacao", "Amadora"));
+        System.out.println(getIdViagem("Urbanizacao", "Amadora"));
     }
 
     // TODO: verificar restrições na base de dados já feita no inicio da execução do programa
@@ -33,6 +36,19 @@ public class queries {
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }
+    }
+
+    public static boolean checkIfTransporte11Exists(){
+        boolean exists = false;
+        try {
+            connect();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT 1 FROM TRANSPORTE WHERE ident=11");
+            if(rs.next())exists = exists=true;
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return exists;
     }
 
     public static List<Integer> getActiveTransports() throws SQLException{
@@ -84,7 +100,7 @@ public class queries {
         }return numlug;
     }
 
-    public static int getNumLug1Comboio(int idviagem) throws SQLException{
+    public static int getNumLugComboio(int idviagem) throws SQLException{
         int numlug1 = -1;
         int numlug2 = -1;
         try {
@@ -151,6 +167,22 @@ public class queries {
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }return idsviagem;
+    }
+
+    public static int getIdViagem(String estpart, String estcheg) {
+        int idviagem = -1;
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT ident FROM VIAGEM WHERE estpartida = ? AND estchegada = ?");
+            pstmt.setString(1, estpart);
+            pstmt.setString(2, estcheg);
+            rs = pstmt.executeQuery();
+            rs.next();
+            idviagem = rs.getInt(1);
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return idviagem;
     }
 
     public static List<String> getAutocarrosActive() throws SQLException{   //NÃO IMPLEMENTA LISTA AUTOCARROS EXISTENTES FORA DE SERVIÇO
@@ -282,6 +314,58 @@ public class queries {
         }
     }
 
+    public static List<Integer> getReservasMB(){
+        List<Integer> list = new ArrayList<Integer>();
+        try {
+            connect();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT ident FROM RESERVA WHERE modopagamento = 'MB'");
+            while(rs.next()) list.add(rs.getInt(1));
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return list;
+    }
+
+    public static boolean checkIfExistsinPagMBway(int reserva){
+        boolean exists = false;
+        try {
+            connect();
+            pstmt = con.prepareStatement("SELECT 1 FROM PAGMBWAY WHERE reserva = ?");
+            pstmt.setInt(1,reserva);
+            rs = pstmt.executeQuery();
+            if(rs.next()) exists = true;
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return exists;
+    }
+
+    public static void insertIntoPagMBway(int reserva, String telefone){
+        try {
+            connect();
+            pstmt = con.prepareStatement("INSERT INTO PAGMBWAY (reserva, telefone) VALUES (?, ?)");
+            pstmt.setInt(1, reserva);
+            pstmt.setString(2, telefone);
+            pstmt.execute();
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+    }
+
+    public static void updatencarruagensAP(){
+        try {
+            connect();
+            stmt = con.createStatement();
+            stmt.executeUpdate("UPDATE COMBOIO " +
+                    "SET ncarruagens=6 WHERE tipo = 'AP'");
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+    }
+
 
 
     public static void reserva(String datares, String modopag, int idviagem) throws SQLException{
@@ -354,7 +438,7 @@ public class queries {
         }
     }
 
-    public static boolean checkIfIfCityOnPartida(String element) throws SQLException{
+    public static boolean checkIfCityOnPartida(String element) throws SQLException{
         boolean bol = false;
         try{
             connect();
@@ -414,20 +498,23 @@ public class queries {
         }
     }
 
-    public static int printEstacoesFromLocalidade(String cidade){
-        int numStations = -1;
+    public static String[] printEstacoesFromLocalidade(String cidade){
+        String[] stations = new String[2];
         try{
             connect();
             pstmt = con.prepareStatement("SELECT ESTACAO.nome FROM ESTACAO JOIN  LOCALIDADE ON " +
                     "ESTACAO.localidade = LOCALIDADE.codpostal WHERE LOCALIDADE.nome = ?");
             pstmt.setString(1, cidade);
             rs = pstmt.executeQuery();
-            numStations = (printTable(rs,1));
+            for(int n=0; rs.next(); n++) {
+                stations[n] = rs.getString(1);
+                System.out.println(rs.getString(1));
+            }
             closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }
-        return numStations;
+        return stations;
     }
 
     public static int maxIdentReserva() throws SQLException{   //STATEMENT NOT PREPARED NOT PROTECTED FROM SQL INJECTION
@@ -442,6 +529,21 @@ public class queries {
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }return maxInt;
+    }
+
+    public static boolean checkViagem(String estpart, String estcheg) throws SQLException{
+        boolean exists = false;
+        try{
+            connect();
+            pstmt = con.prepareStatement("SELECT 1 FROM VIAGEM WHERE estpartida = ? AND estchegada = ?");
+            pstmt.setString(1, estpart);
+            pstmt.setString(2, estcheg);
+            rs = pstmt.executeQuery();
+            if(rs.next()) exists=true;
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return exists;
     }
 
     public static boolean checkIfInDBwithStmt(String attribute, String table, String element) throws SQLException{

@@ -1,7 +1,7 @@
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 class App {
@@ -14,20 +14,22 @@ class App {
     private static final int CURRENT_MONTH = cal.get(Calendar.MONTH)+1; //STARTS COUNTING ON 0 = JAN
     private static final int CURRENT_DAY = cal.get(Calendar.DAY_OF_MONTH);
 
+    private static boolean restricitonscheck = false;  //turn false to skip check of restrictions
+
+
     private static final String[] MODOS_PAGAMENTOS = {"MB" ,"Pay Pal", "CC"};
 
 
     public static void main(String[] args) throws SQLException {
-        //correctDBerrors();
-        //checkBilhetesAndCapacity();
-        //checkHoraChegada();
+        getCurrentDateAndTime();
+        if(restricitonscheck) checkRestrictions();
         optionsMenu();
 
     }
 
     private static void optionsMenu() throws SQLException {
         optionsMenuDisplay();
-        switch (input.nextInt()) {
+        switch (getValInt()) {
             case 1:
                 newReserve();
                 break;
@@ -69,7 +71,6 @@ class App {
 
     private static void optionsMenuDisplay() {
         System.out.println("Reserva viagens");
-        System.out.println();
         System.out.println("1. Nova Reserva (a)");
         System.out.println("2. Alterar Viagem (b)");
         System.out.println("3. Colocar Autocarro Fora de Serviço (c)");
@@ -81,14 +82,23 @@ class App {
         System.out.println("9. Viagens (3c)"); //entre duas cidades numa determinada janela temporal
         System.out.println("10. Tipo de Pagamento pela Média de Idades dos Passageiros que Efectuaram a Reserva (3d)");
         System.out.println("11. Sair");
-        System.out.print("> ");
+    }
+
+    private static void checkRestrictions() throws SQLException{
+        correctDBerrors();
+        checkBilhetesAndCapacity();
+        checkHoraChegada();
+        checkPagMBway();
+        makeSureAPncarruagens6();
     }
 
     private static void correctDBerrors() throws SQLException{
-        queries.executeUpdate("SET NOCOUNT ON INSERT INTO TRANSPORTE (ident, viagem, velmaxima, dataentradaservico, atrdiscriminante) " +
-                "VALUES (11, 645, 100, '2020-01-20', 'C')");
-        queries.executeUpdate("SET NOCOUNT ON INSERT INTO COMBOIO (transporte, tipo, ncarruagens) VALUES (11, 'IC', 3)");
-        queries.executeUpdate("SET NOCOUNT ON INSERT INTO LOCOMOTIVA (nserie, comboio, marca) VALUES (295, 11, 'Roco')");
+        if(!queries.checkIfTransporte11Exists()) {
+            queries.executeUpdate("SET NOCOUNT ON INSERT INTO TRANSPORTE (ident, viagem, velmaxima, dataentradaservico, atrdiscriminante) " +
+                    "VALUES (11, 645, 100, '2020-01-20', 'C')");
+            queries.executeUpdate("SET NOCOUNT ON INSERT INTO COMBOIO (transporte, tipo, ncarruagens) VALUES (11, 'IC', 3)");
+            queries.executeUpdate("SET NOCOUNT ON INSERT INTO LOCOMOTIVA (nserie, comboio, marca) VALUES (295, 11, 'Roco')");
+        }
     }
 
     private static void checkBilhetesAndCapacity() throws SQLException{
@@ -98,7 +108,7 @@ class App {
         for (Integer integer : transp) {
             int lugdisp = -1;
             if (queries.getTransport(integer).equals("autocarro")) lugdisp=queries.getNumLugAutocarro(integer);
-            if (queries.getTransport(integer).equals("comboio")) lugdisp=queries.getNumLug1Comboio(integer);
+            if (queries.getTransport(integer).equals("comboio")) lugdisp=queries.getNumLugComboio(integer);
             if(lugdisp<queries.getNumLugaresOcupados(integer)) System.out.print("DB INCONSISTENT");
         }
     }
@@ -110,8 +120,9 @@ class App {
             int vel = queries.getVelMax(viagem);
             int dist = queries.getDist(viagem);
             //5min margem de erro e arredondamento
-            int hour = (getMinutes(queries.getHoraPart(viagem)) + dist / vel * 60 + (dist % vel) * 60 / 100 + 5) / 60;
-            int minute = (getMinutes(queries.getHoraPart(viagem)) + dist / vel * 60 + (dist % vel) * 60 / 100 + 5) % 60;
+            int timeminutes = getMinutes(queries.getHoraPart(viagem)) + dist / vel * 60 + (dist % vel) * 60 / 100 + 5;
+            int hour = timeminutes / 60;
+            int minute = timeminutes % 60;
             if (hour > 23) {        //limitação DB horachegada>horapartida
                 hour = 23;
                 minute = 59;
@@ -139,6 +150,18 @@ class App {
         return list;
     }
 
+    private static void checkPagMBway(){
+        String defaultnumtel = "+351999999999";
+        List<Integer> reservas = queries.getReservasMB();
+        for (Integer reserva : reservas) {
+            if (!queries.checkIfExistsinPagMBway(reserva)) queries.insertIntoPagMBway(reserva, defaultnumtel);
+        }
+    }
+
+    private static void makeSureAPncarruagens6() {
+        queries.updatencarruagensAP();
+    }
+
     private static void exit() throws SQLException {
         System.out.println("Confirma Saída do Programa");
         if(checkConsent(true)) System.exit(0);
@@ -152,47 +175,57 @@ class App {
         return (confirmExit =='s' || confirmExit =='S');
     }
 
-
     private static void newReserve() throws SQLException {
         System.out.println("Nova Reserva");
-        System.out.println("Data da reserva");
-        String date = getDateAndTime();
+        //System.out.println("Data da reserva");
+        String date = getCurrentDateAndTime();
 
         System.out.println("Modo de Pagamento");
         System.out.println("Modos de Pagamento permitidos: MB, Pay Pal, CC");
-
-        //String modospag = checkIfInArray(MODOS_PAGAMENTOS);
+        String modospag = checkIfInArray(MODOS_PAGAMENTOS);
 
         System.out.println("Meio de Transporte:");
-        System.out.println("comboio ou autocarro");     //add capcheck and transform String to lowerCap
-        //String meiotransporte = checkIfInArray(new String[]{"comboio", "autocarro"});
+        System.out.println("comboio ou autocarro");
+        String meiotransporte = checkIfInArray(new String[]{"comboio", "autocarro"});
         String tipo = "";
-        String meiotransporte = "comboio";      //debug remove after
         if(meiotransporte.equals("comboio")) tipo = "terminal";
         if(meiotransporte.equals("autocarro")) tipo = "paragem";
 
         System.out.println("Cidade de Partida:");
-        cidade(tipo);
+        String cidadepart = cidade(tipo);
+        String estpart = "";
         System.out.println("Cidade de Chegada:");
-        cidade(tipo);
+        String cidadecheg = cidade(tipo);
+        String estcheg = "";
+
+        int idviagem = -1;
+
+       if(queries.checkViagem(estpart, estcheg)) {
+           idviagem = queries.getIdViagem(estpart, estcheg);  //viagem exists get viagemid
+
+       }
 
         // TODO: substituir id viagem por cidade/ estaçao de destino
         // TODO: se não existir tem de se acrescentar viagem
-        // TODO: ?? imprimir destinos possiveis, mesmo assim se n existir o destino temos de o acrescentar
 
-        //queries.reserva(date ,modopagamento ,idviagem);
+        queries.reserva(date ,modospag ,idviagem);
+        if (modospag.equals("MB")){
+            System.out.println("Número de telefone:");
+            String num = getValString();
+            queries.insertIntoPagMBway(queries.getLastInt("ident","RESERVA"), num);
+        }
     }
 
-    private static void cidade(String tipo) throws SQLException {
+    private static String cidade(String tipo) throws SQLException {
+        String estacao = "";
         String cidade = getValString();
         int codpostal = -1;
 
-        if(queries.checkIfIfCityOnPartida(cidade)){  //CIDADE PARTIDA EXISTE
+        if(queries.checkIfCityOnPartida(cidade)){  //CIDADE PARTIDA EXISTE
             System.out.println("Cidade existe na Base de Dados");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
             codpostal = queries.getCodpostal(cidade);
-            System.out.println("Selecione uma das seguintes Estações:");    //para simplificar partimos do principio q casdo haja estações vai ser utilizada uma das mesmas
-            System.out.println("Para tal utilize o número que a precede:");
-            checkBetweenBoundaries(1,queries.printEstacoesFromLocalidade(cidade));
+            System.out.println("Escolha uma das seguintes Estações:");    //para simplificar partimos do principio q casdo haja estações vai ser utilizada uma das mesmas
+            checkIfInArray(queries.printEstacoesFromLocalidade(cidade));
             // MAYBE ADD CHECK TO STATION TO VERIFY IF IT ALLOWS THE MEANS OF TRANSPORTATION
         }else{  //CIDADE NÃO EXISTE
             System.out.println("Cidade não existe na DataBase");
@@ -204,7 +237,7 @@ class App {
             addLocalidadeAndStation(cidade, codpostal, tipo);
             //Por default colocamos o nplataforma como 1,pois se a estação n se encontrava na DB antes à plataforma 1 deverá estar desocupada
 
-        }
+        }return estacao;
     }
 
     private static void addLocalidadeAndStation(String cidadePartida, int codpostal, String tipo) throws SQLException{
@@ -293,19 +326,19 @@ class App {
         System.out.println("Localidade de partida?");
         do {
             localpartida = input.nextLine();
-        } while (localpartida == "");
+        } while (localpartida.equals(""));
         System.out.println("Localidade de chegada?");
         do {
             localchegada = input.nextLine();
-        } while (localchegada == "");
+        } while (localchegada.equals(""));
         System.out.println("Hora de partida?  HH:MM:SS");
         do {
             horapartida = input.nextLine();
-        } while (horapartida == "");
+        } while (horapartida.equals(""));
         System.out.println("Hora de chegada?  HH:MM:SS");
         do {
             horachegada = input.nextLine();
-        } while (horachegada == "");
+        } while (horachegada.equals(""));
 
         if (checkConsent(true)) {
             System.out.println("Viagens entre " + localpartida + " e " + localchegada + " desde " + horapartida + " ás " + horachegada);
@@ -321,6 +354,12 @@ class App {
             System.out.println("    Pagamento  |   Média de Idades");
             queries.avgbypayment();
         }
+    }
+
+    private static String getCurrentDateAndTime(){
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = new Date(System.currentTimeMillis());
+        return formatter.format(date);
     }
 
     private static String getDateAndTime(){
@@ -427,7 +466,7 @@ class App {
         int var;
         do{
             var = getValInt();
-        }while(var <= min);
+        }while(var < min);
         return var;
     }
 
@@ -465,6 +504,7 @@ class App {
         System.out.print("> ");
         int val = input.nextInt();
         input.nextLine();   //consume rest of line
+
         return val;
 
     }
