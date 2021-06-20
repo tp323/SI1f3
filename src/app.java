@@ -196,7 +196,7 @@ class App {
             System.out.println("Cidade existe na Base de Dados");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
             codpostal = queries.getCodpostal(cidade);
             System.out.println("Escolha uma das seguintes Estações:");    //para simplificar partimos do principio q casdo haja estações vai ser utilizada uma das mesmas
-            estacao = checkIfInArray(listToArray(queries.printEstacoesFromLocalidade(cidade)));
+            estacao = checkIfInArray(listToArrayString(queries.printEstacoesFromLocalidade(cidade)));
 
 
             // MAYBE ADD CHECK TO STATION TO VERIFY IF IT ALLOWS THE MEANS OF TRANSPORTATION
@@ -204,7 +204,7 @@ class App {
             System.out.println("Cidade existe na Base de Dados");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
             codpostal = queries.getCodpostal(cidade);
             System.out.println("Escolha uma das seguintes Estações:");    //para simplificar partimos do principio q casdo haja estações vai ser utilizada uma das mesmas
-            estacao = checkIfInArray(listToArray(queries.printEstacoesFromLocalidade(cidade)));
+            estacao = checkIfInArray(listToArrayString(queries.printEstacoesFromLocalidade(cidade)));
             // MAYBE ADD CHECK TO STATION TO VERIFY IF IT ALLOWS THE MEANS OF TRANSPORTATION
         }
         else {  //CIDADE NÃO EXISTE
@@ -214,6 +214,7 @@ class App {
             //COMO A CIDADE NÃO EXISTIA NA DB TB NÃO EXISTEM ESTAÇÕES PARA A MESMA
             addLocalidadeAndStation(cidade, codpostal, tipo);
             //Por default colocamos o nplataforma como 1,pois se a estação n se encontrava na DB antes à plataforma 1 deverá estar desocupada
+            estacao = cidade;
 
         }return estacao;
     }
