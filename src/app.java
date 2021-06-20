@@ -219,7 +219,7 @@ class App {
             System.out.println("Cidade existe na Base de Dados");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
             codpostal = queries.getCodpostal(cidade);
             System.out.println("Escolha uma das seguintes Estações:");    //para simplificar partimos do principio q casdo haja estações vai ser utilizada uma das mesmas
-            checkIfInArray(listToArray(queries.printEstacoesFromLocalidade(cidade)));
+            checkIfInArray(listToArrayString(queries.printEstacoesFromLocalidade(cidade)));
             // MAYBE ADD CHECK TO STATION TO VERIFY IF IT ALLOWS THE MEANS OF TRANSPORTATION
         }else{  //CIDADE NÃO EXISTE
             System.out.println("Cidade não existe na DataBase");
@@ -262,11 +262,22 @@ class App {
             System.out.println("Viagens Disponiveis:");
             queries.availableViagem();
         }
-
         System.out.println("Viagem a Alterar");     //CONSIDERAMOS QUE A VIAGEM EXISTE E SÓ PODE SER SELECIONADA UMA DAS VIAGENS EXISTENTES
-        System.out.println("Escolha de entre as viagens disponiveis, através do digito que a precede");
-        // TODO: GET MAX VALUE
-        //checkBetweenBoundaries(1,max);
+        System.out.println("Escolha de entre as viagens disponiveis, através do número na primeira coluna Ident");
+        int idviagemalterar = checkIfInArrayInt(listToArrayInt(queries.getIdsViagem()));
+        System.out.println("Data Viagem:");
+        String datapart = getDate();
+        System.out.println("Hora Partida:");
+        String timepart = getTime();
+        System.out.println("Hora Chegada:");
+        String timecheg = getTime();
+        System.out.println("Distância:");
+        int dist = getValInt();
+        System.out.println("Estação Partida:");
+        String estpart = getValString();
+        System.out.println("Estação Chegada:");
+        String estcheg = getValString();
+        queries.alterViagem(idviagemalterar,datapart,timepart,timecheg,dist,estpart,estcheg);
 
     }
 
@@ -516,8 +527,16 @@ class App {
 
     public static boolean checkIfBelowMax(int var, int max) {return var >= max;}
 
-    public static String[] listToArray(List<String> list){
+    public static String[] listToArrayString(List<String> list){
         String[] array = new String[list.size()];
+        for (int n=0; n<list.size(); n++){
+            array[n] = list.get(n);
+        }
+        return array;
+    }
+
+    public static int[] listToArrayInt(List<Integer> list){
+        int[] array = new int[list.size()];
         for (int n=0; n<list.size(); n++){
             array[n] = list.get(n);
         }
@@ -532,8 +551,21 @@ class App {
         return var;
     }
 
+    public static int checkIfInArrayInt(int[] array){
+        int var;
+        do{
+            var = getValInt();
+        }while (!checkIfInArrayInt(var, array));
+        return var;
+    }
+
     public static boolean checkIfInArray(String var, String[] array){
         for (String s : array) if (s.equals(var)) return true;
+        return false;
+    }
+
+    public static boolean checkIfInArrayInt(int var, int[] array){
+        for (int s : array) if (s==var) return true;
         return false;
     }
 

@@ -402,15 +402,15 @@ public class queries {
         }
     }
 
-    public static void alterViagem(Date data, Time timepart, Time timecheg, int dist, String estpart, String estcheg) throws SQLException{
+    public static void alterViagem(int ident, String  data, String timepart, String timecheg, int dist, String estpart, String estcheg) throws SQLException{
         try {
             connect();
             pstmt = con.prepareStatement("UPDATE VIAGEM SET ident = ?, dataviagem = ?, horapartida = ?," +
                     " horachegada  = ?, distancia = ?, estpartida = ?, estchegada = ?");
-            pstmt.setInt(1,getLastInt("ident","VIAGEM")+1);
-            pstmt.setDate(2, data);
-            pstmt.setTime(3, timepart);
-            pstmt.setTime(4, timecheg);
+            pstmt.setInt(1,ident);
+            pstmt.setDate(2, Date.valueOf(data));
+            pstmt.setTime(3, Time.valueOf(timepart));
+            pstmt.setTime(4, Time.valueOf(timecheg));
             pstmt.setInt(5, dist);
             pstmt.setString(6, estpart);
             pstmt.setString(7, estcheg);
