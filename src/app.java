@@ -7,18 +7,12 @@ import java.util.List;
 class App {
 
     public static Scanner input = new Scanner(System.in);
-
     private static final Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-
     private static final int CURRENT_YEAR = cal.get(Calendar.YEAR);
     private static final int CURRENT_MONTH = cal.get(Calendar.MONTH)+1; //STARTS COUNTING ON 0 = JAN
-    private static final int CURRENT_DAY = cal.get(Calendar.DAY_OF_MONTH);
+    private static final String[] MODOS_PAGAMENTOS = {"MB", "MBWAY" ,"Pay Pal", "CC"};
 
-    private static boolean restricitonscheck = false;  //turn false to skip check of restrictions
-
-
-    private static final String[] MODOS_PAGAMENTOS = {"MB" ,"Pay Pal", "CC"};
-
+    private static final boolean restricitonscheck = true;  //turn false to skip check of restrictions
 
     public static void main(String[] args) throws SQLException {
         getCurrentDateAndTime();
@@ -30,39 +24,17 @@ class App {
     private static void optionsMenu() throws SQLException {
         optionsMenuDisplay();
         switch (getValInt()) {
-            case 1:
-                newReserve();
-                break;
-            case 2:
-                alterViagem();
-                break;
-            case 3:
-                outofservice();
-                break;
-            case 4:
-                buskilometers();
-                break;
-            case 5:
-                lugaresVazios();
-                break;
-            case 6:
-                sumOfPrice();
-                break;
-            case 7:
-                averageAge();
-                break;
-            case 8:
-                travelintimestamp();
-                break;
-            case 9:
-                typeofpaymentmethod();
-                break;
-            case 10:
-                exit();
-                break;
-            default:
-                System.err.println("Opção não reconhecido");
-                break;
+            case 1 -> newReserve();
+            case 2 -> alterViagem();
+            case 3 -> outofservice();
+            case 4 -> buskilometers();
+            case 5 -> lugaresVazios();
+            case 6 -> sumOfPrice();
+            case 7 -> averageAge();
+            case 8 -> travelintimestamp();
+            case 9 -> typeofpaymentmethod();
+            case 10 -> exit();
+            default -> System.err.println("Opção não reconhecido");
         }
     }
 
@@ -97,6 +69,13 @@ class App {
             queries.executeUpdate("SET NOCOUNT ON INSERT INTO LOCOMOTIVA (nserie, comboio, marca) VALUES (295, 11, 'Roco')");
             queries.executeUpdate("");
         }
+
+
+        if(!queries.checkIfMBWAYexists()){
+            queries.executeUpdate("UPDATE RESERVA SET modopagamento='MBWAY'  WHERE ident = 2231");
+            queries.executeUpdate("DELETE FROM PAGMBWAY WHERE reserva=9348");
+        }
+
     }
 
     private static void checkBilhetesAndCapacity() throws SQLException{
@@ -150,7 +129,7 @@ class App {
 
     private static void checkPagMBway(){
         String defaultnumtel = "+351999999999";
-        List<Integer> reservas = queries.getReservasMB();
+        List<Integer> reservas = queries.getReservasMBWAY();
         for (Integer reserva : reservas) {
             if (!queries.checkIfExistsinPagMBway(reserva)) queries.insertIntoPagMBway(reserva, defaultnumtel);
         }
@@ -163,12 +142,12 @@ class App {
 
     private static void exit() throws SQLException {
         System.out.println("Confirma Saída do Programa");
-        if(checkConsent(true)) System.exit(0);
+        if(checkConsent()) System.exit(0);
         else optionsMenu();
     }
 
-    private static boolean checkConsent(boolean print) {
-        if(print) System.out.println("prima S para confirmar ou qualquer outra tecla para cancelar");
+    private static boolean checkConsent() {
+        System.out.println("prima S para confirmar ou qualquer outra tecla para cancelar");
         char confirmExit = input.next().charAt(0);
         input.nextLine();
         return (confirmExit =='s' || confirmExit =='S');
@@ -257,7 +236,7 @@ class App {
     private static void alterViagem() throws SQLException{
         System.out.println("Alterar Viagem");
         System.out.println("Deseja Ver Viagens Disponiveis?");
-        if(checkConsent(true)){
+        if(checkConsent()){
             System.out.println("Viagens Disponiveis:");
             queries.availableViagem();
         }
@@ -286,19 +265,11 @@ class App {
         String matricula = null;
         do {
             matricula = input.nextLine();
-        }while (matricula == "");
+        }while (matricula.equals(""));
         System.out.println("Confirma a sua escolha?");
-        if (checkConsent(true)) {
-            if(!queries.checkOutOfService());
-            else {
-                queries.busrelatedtuples(matricula);
-            }
-
-
-        }
+        if(checkConsent() && queries.checkOutOfService())queries.busrelatedtuples(matricula);;
 
     }
-
 
     private static void buskilometers() throws SQLException{
         System.out.println("Número de kilometragem de um autocarro");
@@ -306,11 +277,11 @@ class App {
         String matricula = null;
         do {
             matricula = input.nextLine();
-        }while (matricula == "");
+        }while (matricula.equals(""));
         System.out.println("Confirma a sua escolha?");
-        if (checkConsent(true)){
+        if (checkConsent()){
             String sum = queries.getsumofkilometers(matricula);
-            if (sum == "" || sum == null){
+            if (sum.equals("")){
                 System.out.println("O autocarro escolhido não fez nenhuma viagem até ao momento");
             }else {
                 System.out.println("Kilometragem do autocarro: " + sum + "Km");
@@ -324,9 +295,9 @@ class App {
         String cidade = null;
         do {
             cidade = input.nextLine();
-        }while (cidade == "");
+        }while (cidade.equals(""));
         System.out.println("Confirma a sua escolha?");
-        if (checkConsent(true)){
+        if (checkConsent()){
             System.out.println("Números de lugares disponiveis na cidade selecionada:");
             System.out.println("  Transporte | NºLugares Vazios");
             queries.getlugaresfromcidade(cidade);
@@ -334,17 +305,16 @@ class App {
 
     }
 
-
     private static void sumOfPrice() throws SQLException{
         System.out.println("Soma de preços para certa categoria");
         System.out.println("Que categoria quer selecionar? crianca, jovem, adulto, senior, militar");
         String categoria = null;
         do {
             categoria = input.nextLine();
-        }while (categoria == "");
-        if (checkConsent(true)) {
+        }while (categoria.equals(""));
+        if (checkConsent()) {
             String sum = queries.getsumofprice(categoria);
-            if (sum == "" || sum == null){
+            if (sum.equals("")){
                 System.out.println("Não foram vendidos bilhetes desta categoria");
             }else {
                 System.out.println("Soma do valor dos bilhetes: " + sum + "€");
@@ -355,7 +325,7 @@ class App {
     private static void averageAge(){
         System.out.println("Média de idades por reserva");
         System.out.println("Confirma a sua escolha?");
-        if (checkConsent(true)){
+        if (checkConsent()){
             System.out.println("      Reserva |      Data da reserva      | Media de idades");
             queries.avgbyreserve();
         }
@@ -384,7 +354,7 @@ class App {
             horachegada = input.nextLine();
         } while (horachegada.equals(""));
 
-        if (checkConsent(true)) {
+        if (checkConsent()) {
             System.out.println("Viagens entre " + localpartida + " e " + localchegada + " desde " + horapartida + " ás " + horachegada);
             System.out.println("    Est.Partida |   Est.Chegada   |     Viagem      ");
             queries.travelsbytimestamp(localpartida,localchegada,horapartida,horachegada);
@@ -394,7 +364,7 @@ class App {
     private static void typeofpaymentmethod(){
         System.out.println("Média de idades por método de pagamento");
         System.out.println("Confirma a sua escolha?");
-        if (checkConsent(true)){
+        if (checkConsent()){
             System.out.println("    Pagamento  |   Média de Idades");
             queries.avgbypayment();
         }
@@ -514,16 +484,6 @@ class App {
         return var;
     }
 
-    public static boolean checkIfAboveMin(int var, int min) {return var < min;}
-
-    public static int checkIfBelowMax(int max) {
-        int var;
-        do{
-            var = getValInt();
-        }while(var >= max);
-        return var;
-    }
-
     public static boolean checkIfBelowMax(int var, int max) {return var >= max;}
 
     public static String[] listToArrayString(List<String> list){
@@ -568,11 +528,6 @@ class App {
         return false;
     }
 
-    private static boolean stringCheckCityChegadaInDB() throws SQLException{
-        String var = getValString();
-        return queries.checkIfIfCityOnChegada(var);
-    }
-
     private static int getValInt(){
         System.out.print("> ");
         int val = input.nextInt();
@@ -586,6 +541,4 @@ class App {
         System.out.print("> ");
         return input.nextLine();
     }
-
-
 }
