@@ -1,5 +1,3 @@
-import org.w3c.dom.ls.LSOutput;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,14 +8,6 @@ public class queries {
     private static Statement stmt = null;
     private static PreparedStatement pstmt = null;
     private static ResultSet rs = null;
-    
-
-    public static void main(String[] args) throws SQLException {    //USED FOR TESTS DELETE ON END
-        System.out.println(checkViagem("Urbanizacao", "Amadora"));
-        System.out.println(getIdViagem("Urbanizacao", "Amadora"));
-    }
-
-    // TODO: verificar restrições na base de dados já feita no inicio da execução do programa
 
     private static void connect() throws SQLException {
         try {
@@ -44,6 +34,19 @@ public class queries {
             connect();
             stmt = con.createStatement();
             rs = stmt.executeQuery("SELECT 1 FROM TRANSPORTE WHERE ident=11");
+            if(rs.next())exists = exists=true;
+            closeConnection();
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }return exists;
+    }
+
+    public static boolean checkIfMBWAYexists(){
+        boolean exists = false;
+        try {
+            connect();
+            stmt = con.createStatement();
+            rs = stmt.executeQuery("SELECT 1 FROM RESERVA WHERE modopagamento ='MBWAY'");
             if(rs.next())exists = exists=true;
             closeConnection();
         }catch(SQLException sqlex) {
@@ -120,24 +123,6 @@ public class queries {
         }return numlug1+numlug2;
     }
 
-    public static int getNumLug2Comboio(int idviagem) throws SQLException{
-        int numlug2 = -1;
-        try {
-            connect();
-            pstmt = con.prepareStatement("SELECT nlugclasse2 FROM ((VIAGEM JOIN TRANSPORTE ON " +
-                    "VIAGEM.ident = viagem) JOIN COMBOIO ON TRANSPORTE.ident = COMBOIO.transporte) JOIN " +
-                    "COMBOIOTIPO ON COMBOIO.tipo = COMBOIOTIPO.id WHERE atrdiscriminante = 'C' AND " +
-                    "VIAGEM.ident = ?");
-            pstmt.setInt(1,idviagem);
-            rs = pstmt.executeQuery();
-            rs.next();
-            numlug2 = rs.getInt(1);
-            closeConnection();
-        }catch(SQLException sqlex) {
-            System.out.println("Erro: " + sqlex.getMessage());
-        }return numlug2;
-    }
-
     public static String getTransport(int idviagem) {
         String meiotransporte = "";
         try {
@@ -183,57 +168,6 @@ public class queries {
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }return idviagem;
-    }
-
-    public static List<String> getAutocarrosActive() throws SQLException{   //NÃO IMPLEMENTA LISTA AUTOCARROS EXISTENTES FORA DE SERVIÇO
-        List<String> marcaAndModelo = new ArrayList<>();    // Lista armazena marca em posições pares e modelo em posições impares
-        try {
-            connect();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT marca, modelo FROM AUTOCARRO");
-            while (rs.next()){
-                marcaAndModelo.add(rs.getString(1));
-                marcaAndModelo.add(rs.getString(2));
-            }
-            closeConnection();
-        }catch(SQLException sqlex) {
-            System.out.println("Erro: " + sqlex.getMessage());
-        }return marcaAndModelo;
-    }
-
-    public static List<Integer> getIdViagemWithAutocarroOrComboio(boolean meiotransp) throws SQLException{
-        //  meiotransp true para Autocarro e false para Comboio
-        List<Integer> idsviagem = new ArrayList<Integer>();
-        char vardisc = 'z';
-        if (meiotransp) vardisc = 'A';
-        if (!meiotransp) vardisc = 'C';
-        try {
-            connect();
-            pstmt = con.prepareStatement("SELECT viagem FROM TRANSPORTE WHERE atrdiscriminante = ?");
-            pstmt.setString(1, String.valueOf(vardisc));
-            rs = pstmt.executeQuery();
-            while(rs.next()) idsviagem.add(rs.getInt(1));
-            closeConnection();
-        }catch(SQLException sqlex) {
-            System.out.println("Erro: " + sqlex.getMessage());
-        }return idsviagem;
-    }
-
-    public static void getNumLugaresAutocarro(String marca, String modelo) throws SQLException{
-        try {
-            connect();
-            pstmt = con.prepareStatement("SELECT nlugares FROM AUTOCARRO JOIN " +
-                    "AUTOCARROTIPO ON (AUTOCARRO.modelo=AUTOCARROTIPO.modelo AND AUTOCARRO.marca=AUTOCARROTIPO.marca) " +
-                    "WHERE AUTOCARRO.marca = ? AND AUTOCARRO.modelo = ?");
-            pstmt.setString(1,marca);
-            pstmt.setString(2,modelo);
-            rs = pstmt.executeQuery();
-            rs.next();
-            System.out.println(rs.getInt(1));
-            closeConnection();
-        }catch(SQLException sqlex) {
-            System.out.println("Erro: " + sqlex.getMessage());
-        }
     }
 
     public static int getVelMax(int viagem) throws SQLException{
@@ -314,7 +248,7 @@ public class queries {
         }
     }
 
-    public static List<Integer> getReservasMB(){
+    public static List<Integer> getReservasMBWAY(){
         List<Integer> list = new ArrayList<Integer>();
         try {
             connect();
@@ -366,8 +300,6 @@ public class queries {
         }
     }
 
-
-
     public static void reserva(String datares, String modopag, int idviagem) throws SQLException{
         try {
             connect();
@@ -407,15 +339,15 @@ public class queries {
         return idviagem;
     }
 
-    public static void alterViagem(Date data, Time timepart, Time timecheg, int dist, String estpart, String estcheg) throws SQLException{
+    public static void alterViagem(int ident, String  data, String timepart, String timecheg, int dist, String estpart, String estcheg) throws SQLException{
         try {
             connect();
             pstmt = con.prepareStatement("UPDATE VIAGEM SET ident = ?, dataviagem = ?, horapartida = ?," +
                     " horachegada  = ?, distancia = ?, estpartida = ?, estchegada = ?");
-            pstmt.setInt(1,getLastInt("ident","VIAGEM")+1);
-            pstmt.setDate(2, data);
-            pstmt.setTime(3, timepart);
-            pstmt.setTime(4, timecheg);
+            pstmt.setInt(1,ident);
+            pstmt.setDate(2, Date.valueOf(data));
+            pstmt.setTime(3, Time.valueOf(timepart));
+            pstmt.setTime(4, Time.valueOf(timecheg));
             pstmt.setInt(5, dist);
             pstmt.setString(6, estpart);
             pstmt.setString(7, estcheg);
@@ -442,19 +374,6 @@ public class queries {
                 System.out.print(fillGap(rs.getString("estpartida"),15) + " | ");
                 System.out.println(fillGap(rs.getString("estchegada"),15) + " | ");
             }
-            closeConnection();
-        }catch(SQLException sqlex) {
-            System.out.println("Erro: " + sqlex.getMessage());
-        }
-    }
-
-    public static void getLocalPartAndChegada() throws SQLException{
-        try{
-            connect();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT ident, dataviagem, horapartida, horachegada, estpartida, b.nome cidadepart, estchegada, LOCALIDADE.nome cidadecheg "
-                + "FROM VIAGEM JOIN ESTACAO ON estchegada = nome JOIN LOCALIDADE ON ESTACAO.localidade = LOCALIDADE.codpostal "
-                + "JOIN ESTACAO a ON estpartida = a.nome JOIN LOCALIDADE b ON a.localidade = b.codpostal");
             closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
@@ -577,7 +496,6 @@ public class queries {
         }return bol;
     }
 
-    //IS STMT
     public static int getCodpostal(String element) throws SQLException{
         int val = -1;
         try{
@@ -591,22 +509,6 @@ public class queries {
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }return val;
-    }
-
-    public static boolean checkIfInDBwithPstmt(String attribute, String table, String element) throws SQLException{
-        boolean bol = false;
-        try{
-            connect();
-            pstmt = con.prepareStatement("SELECT 1 FROM ? WHERE ? = ?");
-            pstmt.setString(1, table);
-            pstmt.setString(2, attribute);
-            pstmt.setString(3, element);
-            rs = pstmt.executeQuery();
-            bol = rs.next();
-            closeConnection();
-        }catch(SQLException sqlex) {
-            System.out.println("Erro: " + sqlex.getMessage());
-        }return bol;
     }
 
     public static boolean checkOutOfService(){
