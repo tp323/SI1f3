@@ -40,27 +40,24 @@ class App {
                 outofservice();
                 break;
             case 4:
-
-                break;
-            case 5:
                 buskilometers();
                 break;
-            case 6:
+            case 5:
                 lugaresVazios();
                 break;
-            case 7:
+            case 6:
                 sumOfPrice();
                 break;
-            case 8:
+            case 7:
                 averageAge();
                 break;
-            case 9:
+            case 8:
                 travelintimestamp();
                 break;
-            case 10:
+            case 9:
                 typeofpaymentmethod();
                 break;
-            case 11:
+            case 10:
                 exit();
                 break;
             default:
@@ -74,14 +71,13 @@ class App {
         System.out.println("1. Nova Reserva (a)");
         System.out.println("2. Alterar Viagem (b)");
         System.out.println("3. Colocar Autocarro Fora de Serviço (c)");
-        System.out.println("4. Lista Autocarros em Serviço e Fora de Serviço");
-        System.out.println("5. Número Total de Quilómetros de um Autocarro (d)");
-        System.out.println("6. Número de Lugares Vazios dos Autocarros ou Comboios que Partiram de Determinada Cidade (2d)");
-        System.out.println("7. Soma dos Preços de Bilhete para a Categoria de Adultos (2f)");
-        System.out.println("8. Média de Idades dos Passageiros por Reserva (2g)");
-        System.out.println("9. Viagens (3c)"); //entre duas cidades numa determinada janela temporal
-        System.out.println("10. Tipo de Pagamento pela Média de Idades dos Passageiros que Efectuaram a Reserva (3d)");
-        System.out.println("11. Sair");
+        System.out.println("4. Número Total de Quilómetros de um Autocarro (d)");
+        System.out.println("5. Número de Lugares Vazios dos Autocarros ou Comboios que Partiram de Determinada Cidade (2d)");
+        System.out.println("6. Soma dos Preços de Bilhete para a Categoria de Adultos (2f)");
+        System.out.println("7. Média de Idades dos Passageiros por Reserva (2g)");
+        System.out.println("8. Viagens (3c)"); //entre duas cidades numa determinada janela temporal
+        System.out.println("9. Tipo de Pagamento pela Média de Idades dos Passageiros que Efectuaram a Reserva (3d)");
+        System.out.println("10. Sair");
     }
 
     private static void checkRestrictions() throws SQLException{
@@ -93,11 +89,13 @@ class App {
     }
 
     private static void correctDBerrors() throws SQLException{
+
         if(!queries.checkIfTransporte11Exists()) {
             queries.executeUpdate("SET NOCOUNT ON INSERT INTO TRANSPORTE (ident, viagem, velmaxima, dataentradaservico, atrdiscriminante) " +
                     "VALUES (11, 645, 100, '2020-01-20', 'C')");
             queries.executeUpdate("SET NOCOUNT ON INSERT INTO COMBOIO (transporte, tipo, ncarruagens) VALUES (11, 'IC', 3)");
             queries.executeUpdate("SET NOCOUNT ON INSERT INTO LOCOMOTIVA (nserie, comboio, marca) VALUES (295, 11, 'Roco')");
+            queries.executeUpdate("");
         }
     }
 
@@ -156,6 +154,7 @@ class App {
         for (Integer reserva : reservas) {
             if (!queries.checkIfExistsinPagMBway(reserva)) queries.insertIntoPagMBway(reserva, defaultnumtel);
         }
+
     }
 
     private static void makeSureAPncarruagens6() {
