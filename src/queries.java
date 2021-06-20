@@ -489,6 +489,30 @@ public class queries {
         }return bol;
     }
 
+    public static String getsumofkilometers(String matricula){
+        String query = "SELECT matricula, sum(distancia) as kilometragem\n" +
+                "FROM AUTOCARRO JOIN TRANSPORTE T on T.ident = AUTOCARRO.transporte JOIN VIAGEM V on V.ident = T.viagem\n" +
+                "WHERE (datediff(day ,CURRENT_TIMESTAMP,dataviagem) < 0 or (datediff(day ,CURRENT_TIMESTAMP,dataviagem) = 0 and datediff(second , cast(CURRENT_TIMESTAMP as time (0)), horachegada ) <= 0)) and matricula = ?\n" +
+                "group by matricula";
+
+        String soma = "";
+
+        try{
+            connect();
+            pstmt = con.prepareStatement(query);
+            pstmt.setString(1, matricula);
+            rs = pstmt.executeQuery();
+            rs.next();
+            soma = rs.getString(2);
+            closeConnection();
+
+        }catch(SQLException sqlex) {
+            System.out.println("Erro: " + sqlex.getMessage());
+        }
+        return soma;
+
+    }
+
     public static void getlugaresfromcidade(String local){
         String query = "SELECT H.transporte, (nlugares - ocupados) as vazios\n" +
                 "FROM (SELECT nlugares, transporte\n" +

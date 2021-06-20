@@ -41,7 +41,7 @@ class App {
 
                 break;
             case 5:
-
+                buskilometers();
                 break;
             case 6:
                 lugaresVazios();
@@ -239,6 +239,24 @@ class App {
         // TODO: GET MAX VALUE
         //checkBetweenBoundaries(1,max);
 
+    }
+
+    private static void buskilometers() throws SQLException{
+        System.out.println("Número de kilometragem de um autocarro");
+        System.out.println("Que autocarro deseja verificar?  ll-nn-ll, l-> letra, n-> numero ");
+        String matricula = null;
+        do {
+            matricula = input.nextLine();
+        }while (matricula == "");
+        System.out.println("Confirma a sua escolha?");
+        if (checkConsent(true)){
+            String sum = queries.getsumofkilometers(matricula);
+            if (sum == "" || sum == null){
+                System.out.println("O autocarro escolhido não fez nenhuma viagem até ao momento");
+            }else {
+                System.out.println("Kilometragem do autocarro: " + sum + "Km");
+            }
+        }
     }
 
     private static void lugaresVazios() throws SQLException{
