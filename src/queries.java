@@ -17,7 +17,7 @@ public class queries {
         }
     }
 
-    public static void executeUpdate(String querry) throws SQLException{
+    public static void executeUpdate(String querry){
         try {
             connect();
             stmt = con.createStatement();
@@ -54,7 +54,7 @@ public class queries {
         }return exists;
     }
 
-    public static List<Integer> getActiveTransports() throws SQLException{
+    public static List<Integer> getActiveTransports(){
         List<Integer> activetransports = new ArrayList<Integer>();
         try {
             connect();
@@ -68,7 +68,7 @@ public class queries {
         }return activetransports;
     }
 
-    public static int getNumLugaresOcupados(int numlugaresocupados) throws SQLException{
+    public static int getNumLugaresOcupados(int numlugaresocupados){
         int val = -1;
         try {
             connect();
@@ -85,7 +85,7 @@ public class queries {
         }return val;
     }
 
-    public static int getNumLugAutocarro(int idviagem) throws SQLException{
+    public static int getNumLugAutocarro(int idviagem){
         int numlug = -1;
         try {
             connect();
@@ -103,7 +103,7 @@ public class queries {
         }return numlug;
     }
 
-    public static int getNumLugComboio(int idviagem) throws SQLException{
+    public static int getNumLugComboio(int idviagem){
         int numlug1 = -1;
         int numlug2 = -1;
         try {
@@ -170,7 +170,7 @@ public class queries {
         }return idviagem;
     }
 
-    public static int getVelMax(int viagem) throws SQLException{
+    public static int getVelMax(int viagem) {
         int velmax = -1;
         try {
             connect();
@@ -186,7 +186,7 @@ public class queries {
         }return velmax;
     }
 
-    public static int getDist(int viagem) throws SQLException{
+    public static int getDist(int viagem) {
         int velmax = -1;
         try {
             connect();
@@ -201,7 +201,7 @@ public class queries {
         }return velmax;
     }
 
-    public static String getHoraPart(int viagem) throws SQLException{
+    public static String getHoraPart(int viagem) {
         Time horapart = null;
         String horapartida = "";
         try {
@@ -218,7 +218,7 @@ public class queries {
         }return horapartida;
     }
 
-    public static String getHoraCheg(int viagem) throws SQLException{
+    public static String getHoraCheg(int viagem) {
         Time horacheg = null;
         String horachegada = "";
         try {
@@ -300,7 +300,7 @@ public class queries {
         }
     }
 
-    public static void reserva(String datares, String modopag, int idviagem) throws SQLException{
+    public static void reserva(String datares, String modopag, int idviagem) {
         try {
             connect();
             pstmt = con.prepareStatement("INSERT INTO RESERVA (ident, datareserva, modopagamento, viagem) " +
@@ -316,7 +316,7 @@ public class queries {
         }
     }
 
-    public static int createViagem(String data, String timepart, String timecheg, int dist, String estpart, String estcheg) throws SQLException{
+    public static int createViagem(String data, String timepart, String timecheg, int dist, String estpart, String estcheg) {
         int idviagem = -1;
         try {
             connect();
@@ -339,7 +339,7 @@ public class queries {
         return idviagem;
     }
 
-    public static void alterViagem(int ident, String  data, String timepart, String timecheg, int dist, String estpart, String estcheg) throws SQLException{
+    public static void alterViagem(int ident, String  data, String timepart, String timecheg, int dist, String estpart, String estcheg){
         try {
             connect();
             pstmt = con.prepareStatement("UPDATE VIAGEM SET ident = ?, dataviagem = ?, horapartida = ?," +
@@ -357,7 +357,7 @@ public class queries {
         }
     }
 
-    public static void availableViagem() throws  SQLException{
+    public static void availableViagem() {
         try {
             connect();
             stmt = con.createStatement();
@@ -380,7 +380,7 @@ public class queries {
         }
     }
 
-    public static boolean checkIfCityOnPartida(String element) throws SQLException{
+    public static boolean checkIfCityOnPartida(String element) {
         boolean bol = false;
         try{
             connect();
@@ -396,7 +396,7 @@ public class queries {
         return bol;
     }
 
-    public static boolean checkIfIfCityOnChegada(String element) throws SQLException{
+    public static boolean checkIfIfCityOnChegada(String element) {
         boolean bol = false;
         try{
             connect();
@@ -412,7 +412,7 @@ public class queries {
         return bol;
     }
 
-    public static void addCityToDB(String cidade, int codpostal) throws SQLException{
+    public static void addCityToDB(String cidade, int codpostal) {
         try{
             connect();
             pstmt = con.prepareStatement("INSERT INTO LOCALIDADE (codpostal, nome) VALUES ( ?, ?)");
@@ -425,7 +425,7 @@ public class queries {
         }
     }
 
-    public static void addStationToDB(String nome, String tipo, int nplataforma, int localidade) throws SQLException{
+    public static void addStationToDB(String nome, String tipo, int nplataforma, int localidade) {
         try{
             connect();
             pstmt = con.prepareStatement("INSERT INTO ESTACAO (nome, tipo, nplataforma, localidade) VALUES ( ?, ?, ?, ?)");
@@ -483,20 +483,7 @@ public class queries {
         }return exists;
     }
 
-    public static boolean checkIfInDBwithStmt(String attribute, String table, String element) throws SQLException{
-        boolean bol = false;
-        try{
-            connect();
-            stmt = con.createStatement();
-            rs = stmt.executeQuery("SELECT 1 FROM " + table + " WHERE " + attribute + " = " + element);
-            bol = rs.next();
-            closeConnection();
-        }catch(SQLException sqlex) {
-            System.out.println("Erro: " + sqlex.getMessage());
-        }return bol;
-    }
-
-    public static int getCodpostal(String element) throws SQLException{
+    public static int getCodpostal(String element){
         int val = -1;
         try{
             connect();
@@ -848,10 +835,5 @@ public class queries {
         if (pstmt != null) pstmt.close(); //libertar os recursos do Prepared Statement
         if (con != null) con.close(); //fechar ligacao
     }
-
-    public static void closeResources() throws SQLException {
-        if (rs != null) rs.close(); //libertar os recursos do ResultSet
-        if (stmt != null) stmt.close(); //libertar os recursos do Statement
-        if (pstmt != null) pstmt.close(); //libertar os recursos do Prepared Statement
-    }
+    
 }

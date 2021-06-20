@@ -174,7 +174,7 @@ class App {
         String estcheg = cidade(tipo, false);
 
 
-        int idviagem = -1;
+        int idviagem;
 
        if(queries.checkViagem(estpart, estcheg)) idviagem = queries.getIdViagem(estpart, estcheg);  //viagem exists get viagemid
        else idviagem=addViagem(estpart,estcheg);
@@ -266,7 +266,7 @@ class App {
 
     }
 
-    private static void outofservice() throws SQLException{
+    private static void outofservice(){
         System.out.println("Colocar um autocarro fora de serviço");
         System.out.println("Que autocarro deseja verificar?  ll-nn-ll, l-> letra, n-> numero ");
         String matricula = null;
@@ -278,7 +278,7 @@ class App {
 
     }
 
-    private static void buskilometers() throws SQLException{
+    private static void buskilometers(){
         System.out.println("Número de kilometragem de um autocarro");
         System.out.println("Que autocarro deseja verificar?  ll-nn-ll, l-> letra, n-> numero ");
         String matricula = null;
@@ -296,7 +296,7 @@ class App {
         }
     }
 
-    private static void lugaresVazios() throws SQLException{
+    private static void lugaresVazios(){
         System.out.println("Lugares Vazios nos transportes que partem de determinada cidade");
         System.out.println("Que cidade deseja verificar?");
         String cidade = null;
@@ -312,7 +312,7 @@ class App {
 
     }
 
-    private static void sumOfPrice() throws SQLException{
+    private static void sumOfPrice(){
         System.out.println("Soma de preços para certa categoria");
         System.out.println("Que categoria quer selecionar? crianca, jovem, adulto, senior, militar");
         String categoria = null;
@@ -381,26 +381,6 @@ class App {
         SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date date = new Date(System.currentTimeMillis());
         return formatter.format(date);
-    }
-
-    private static String getDateAndTime(){
-        System.out.println("Ano");
-        int year = checkIfAboveMin(CURRENT_YEAR);
-        System.out.println("Mês");
-        System.out.println("Entre 1 e 12");
-        System.out.println("1 = JAN  12 = DEZ");
-        int month;
-        if(year == CURRENT_YEAR ) month = checkBetweenBoundaries(CURRENT_MONTH, 12);
-        else month = checkBetweenBoundaries(1, 12);
-        System.out.println("Dia");
-        int lastdaymonth = lastDayMonth(month, year);
-        System.out.println("Entre 1 e " + lastdaymonth);
-        int day = checkBetweenBoundaries(1, lastdaymonth);
-        System.out.println("Hora");
-        int hour = checkBetweenBoundaries(0,23);
-        System.out.println("Minutos");
-        int minutes = checkBetweenBoundaries(0,59); // não se justifica colocar segundos
-        return getStringDate(year,month,day,hour,minutes);
     }
 
     private static String getDate(){
@@ -481,7 +461,7 @@ class App {
         return var;
     }
 
-    public static boolean checkBetweenBoundaries(int var, int min, int max) {return (var < min || var > max);}
+    //public static boolean checkBetweenBoundaries(int var, int min, int max) {return (var < min || var > max);}
 
     public static int checkIfAboveMin(int min) {
         int var;
