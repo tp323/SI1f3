@@ -179,7 +179,7 @@ class App {
         String date = getCurrentDateAndTime();
 
         System.out.println("Modo de Pagamento");
-        System.out.println("Modos de Pagamento permitidos: MB, Pay Pal, CC");
+        System.out.println("Modos de Pagamento permitidos: MB, Pay Pal, CC, MBWAY");
         String modospag = checkIfInArray(MODOS_PAGAMENTOS);
 
         System.out.println("Meio de Transporte:");
@@ -190,18 +190,17 @@ class App {
         if(meiotransporte.equals("autocarro")) tipo = "paragem";
 
         System.out.println("Cidade de Partida:");
-        String cidadepart = cidade(tipo);
-        String estpart = "";
+        String estpart = cidade(tipo, true);
         System.out.println("Cidade de Chegada:");
-        String cidadecheg = cidade(tipo);
-        String estcheg = "";
+        String estcheg = cidade(tipo, false);
+
 
         int idviagem = -1;
 
        if(queries.checkViagem(estpart, estcheg)) idviagem = queries.getIdViagem(estpart, estcheg);  //viagem exists get viagemid
        else idviagem=addViagem(estpart,estcheg);
 
-        if (modospag.equals("MB")){
+        if (modospag.equals("MBWAY")){
             System.out.println("Número de telefone:");
             String num = getValString();
             queries.insertIntoPagMBway(queries.getLastInt("ident","RESERVA"), num);
@@ -209,21 +208,26 @@ class App {
         queries.reserva(date,modospag,idviagem);
     }
 
-    private static String cidade(String tipo) throws SQLException {
+    private static String cidade(String tipo, Boolean partida) throws SQLException {
         String estacao = "";
         String cidade = getValString();
         int codpostal = -1;
 
-        if(queries.checkIfCityOnPartida(cidade)){  //CIDADE PARTIDA EXISTE
+        if(partida && queries.checkIfCityOnPartida(cidade)) {  //CIDADE PARTIDA EXISTE
             System.out.println("Cidade existe na Base de Dados");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
             codpostal = queries.getCodpostal(cidade);
             System.out.println("Escolha uma das seguintes Estações:");    //para simplificar partimos do principio q casdo haja estações vai ser utilizada uma das mesmas
-            checkIfInArray(listToArray(queries.printEstacoesFromLocalidade(cidade)));
+            estacao = checkIfInArray(listToArray(queries.printEstacoesFromLocalidade(cidade)));
             // MAYBE ADD CHECK TO STATION TO VERIFY IF IT ALLOWS THE MEANS OF TRANSPORTATION
-        }else{  //CIDADE NÃO EXISTE
+        }else if (!partida && queries.checkIfIfCityOnChegada(cidade)){
+            System.out.println("Cidade existe na Base de Dados");    //SE A CIDADE EXISTE NA DB PARTIMOS DO PRINCIPIO QUE TEM ESTAÇÕES OU TERMINAIS ATRIBUIDOS
+            codpostal = queries.getCodpostal(cidade);
+            System.out.println("Escolha uma das seguintes Estações:");    //para simplificar partimos do principio q casdo haja estações vai ser utilizada uma das mesmas
+            estacao = checkIfInArray(listToArray(queries.printEstacoesFromLocalidade(cidade)));
+            // MAYBE ADD CHECK TO STATION TO VERIFY IF IT ALLOWS THE MEANS OF TRANSPORTATION
+        }
+        else {  //CIDADE NÃO EXISTE
             System.out.println("Cidade não existe na DataBase");
-            System.out.println("Nome Cidade:");
-            String newcidade = getValString();
             System.out.println("Código Postal:");
             codpostal = getValInt();        //restrição?    ??generate??
             //COMO A CIDADE NÃO EXISTIA NA DB TB NÃO EXISTEM ESTAÇÕES PARA A MESMA
@@ -249,8 +253,8 @@ class App {
         String timecheg = getTime();
         System.out.println("Distância:");
         int dist = getValInt();
-        queries.createViagem(datapart,timepart,timecheg,dist,estpart,estcheg);
-        idviagem = queries.getLastInt("ident","VIAGEM");
+        idviagem = queries.createViagem(datapart,timepart,timecheg,dist,estpart,estcheg);
+
         return idviagem;
     }
 

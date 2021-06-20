@@ -384,12 +384,13 @@ public class queries {
         }
     }
 
-    public static void createViagem(String data, String timepart, String timecheg, int dist, String estpart, String estcheg) throws SQLException{
+    public static int createViagem(String data, String timepart, String timecheg, int dist, String estpart, String estcheg) throws SQLException{
+        int idviagem = -1;
         try {
             connect();
-            pstmt = con.prepareStatement("INSERT INTO EMPLOYEE (ident, dataviagem, horapartida, horachegada, " +
+            pstmt = con.prepareStatement("INSERT INTO VIAGEM (ident, dataviagem, horapartida, horachegada, " +
                     "distancia, estpartida, estchegada) VALUES (?,?,?,?,?,?,?)");
-            pstmt.setInt(1,getLastInt("ident","VIAGEM")+1);
+            pstmt.setInt(1,(getLastInt("ident","VIAGEM")+1));
             pstmt.setDate(2, Date.valueOf(data));
             pstmt.setTime(3, Time.valueOf(timepart));
             pstmt.setTime(4, Time.valueOf(timecheg));
@@ -397,9 +398,13 @@ public class queries {
             pstmt.setString(6, estpart);
             pstmt.setString(7, estcheg);
             pstmt.executeUpdate();
+            idviagem = getLastInt("ident","VIAGEM");
+            closeConnection();
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }
+
+        return idviagem;
     }
 
     public static void alterViagem(Date data, Time timepart, Time timecheg, int dist, String estpart, String estcheg) throws SQLException{
@@ -911,12 +916,12 @@ public class queries {
     public static int getLastInt(String attribute, String table) throws SQLException{   //STATEMENT NOT PREPARED NOT PROTECTED FROM SQL INJECTION
         int maxInt = -1;
         try{
-            connect();
+
             stmt = con.createStatement();
             rs = stmt.executeQuery("SELECT MAX(" + attribute + ") FROM " + table);
             rs.next();
             maxInt = rs.getInt(1);
-            closeConnection();
+
         }catch(SQLException sqlex) {
             System.out.println("Erro: " + sqlex.getMessage());
         }return maxInt;
